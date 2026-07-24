@@ -47,6 +47,18 @@ export default function Home() {
   const setSession = useAppStore((s) => s.setSession);
   const setSessionLoading = useAppStore((s) => s.setSessionLoading);
   const navigate = useAppStore((s) => s.navigate);
+  const openPublicSite = useAppStore((s) => s.openPublicSite);
+
+  // URL-based public access: /?site=slug renders that business's public site
+  // with NO auth required. This is how prospects visit a client's site.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const siteSlug = params.get("site");
+    if (siteSlug) {
+      openPublicSite(siteSlug);
+    }
+  }, [openPublicSite]);
 
   // Hydrate session once on mount
   useSessionHydration({
@@ -56,9 +68,11 @@ export default function Home() {
     org,
   });
 
-  // Guard: if trying to view dashboard/onboarding without auth, bounce to landing
+  // Guard: if trying to view dashboard/onboarding without auth, bounce to landing.
+  // NOTE: view === "public" never gets redirected — public sites are open to everyone.
   useEffect(() => {
     if (sessionLoading) return;
+    if (view === "public") return; // public sites need no auth
     if (!user && (view === "dashboard" || view === "onboarding")) {
       navigate("auth");
     }
@@ -66,13 +80,16 @@ export default function Home() {
     if (user && org && (view === "landing" || view === "auth")) {
       navigate("dashboard");
     }
-    // if user logged in, no org, and on landing/auth/onboarding-mid → go onboarding
+    // if user logged in, no org, and on landing/auth → go onboarding
     if (user && !org && view === "landing") {
       navigate("onboarding");
     }
   }, [user, org, view, sessionLoading, navigate]);
 
-  // Loading gate on first paint
+  // Loading gate on first paint — but NOT if we're showing a public site
+  // (public sites don't need the session, so show them immediately)
+  if (view === "public") return <PublicSiteView />;
+
   if (sessionLoading) {
     return <FullPageSkeleton />;
   }
@@ -86,7 +103,6 @@ export default function Home() {
     if (!user) return <AuthView />;
     return <DashboardView />;
   }
-  if (view === "public") return <PublicSiteView />;
 
   // default: landing
   return <LandingView />;

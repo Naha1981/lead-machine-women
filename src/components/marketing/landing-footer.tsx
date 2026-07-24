@@ -79,7 +79,7 @@ export default function LandingFooter() {
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-6 sm:flex-row">
           <p className="text-xs text-slate-500">
-            © 2025 NhahaLabs. Built in South Africa 🇿🇦
+            © 2026 NhahaLabs. Built in South Africa 🇿🇦
           </p>
           <p className="text-xs text-slate-400">
             Lead Machine · POPIA Compliant · WhatsApp-ready

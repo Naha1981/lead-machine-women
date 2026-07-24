@@ -8,8 +8,11 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Code2,
+  Copy,
   ExternalLink,
   Globe,
+  Link2,
   Loader2,
   MessageCircle,
   Palette,
@@ -91,6 +94,14 @@ export default function OnboardingView() {
   const generateFiredRef = useRef(false);
   const createOrgFiredRef = useRef(false);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
+
+  // "I already have a website?" toggle — branches the flow
+  const [mode, setMode] = useState<"choose" | "generate" | "embed">("choose");
+  const [existingSiteUrl, setExistingSiteUrl] = useState("");
+  const [embedStep, setEmbedStep] = useState<1 | 2>(1);
+  const [embedCreating, setEmbedCreating] = useState(false);
+  const [embedCreated, setEmbedCreated] = useState(false);
+  const embedCreateFiredRef = useRef(false);
 
   // Edge case: user already has an org -> bounce to dashboard
   useEffect(() => {
@@ -196,9 +207,48 @@ export default function OnboardingView() {
     }
   }
 
+  // Embed mode: create the org WITHOUT generating a website. The user keeps
+  // their existing site and will paste a lead-capture snippet onto it.
+  async function runCreateOrgEmbed() {
+    if (embedCreated) return;
+    setEmbedCreating(true);
+    try {
+      await apiClient.createOrg({
+        name: businessName.trim(),
+        industry,
+        services: services.trim() || `(Existing site: ${existingSiteUrl.trim()})`,
+        whatsappNumber: whatsappNumber.trim() || undefined,
+        ownerPhone: whatsappNumber.trim() || undefined,
+        primaryColor,
+      });
+      setEmbedCreated(true);
+      toast.success("Your Lead Machine engine is ready! 🎉");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to create your business";
+      toast.error(msg);
+      embedCreateFiredRef.current = false;
+    } finally {
+      setEmbedCreating(false);
+    }
+  }
+
+  // Fire embed org-creation when entering embed step 2
+  useEffect(() => {
+    if (mode !== "embed") return;
+    if (embedStep !== 2) return;
+    if (embedCreateFiredRef.current || embedCreated) return;
+    embedCreateFiredRef.current = true;
+    void runCreateOrgEmbed();
+  }, [mode, embedStep, embedCreated]);
+
   const step1Valid = Boolean(businessName.trim() && industry && services.trim());
   const step2Valid = Boolean(template && primaryColor);
   const step3Valid = Boolean(generatedWebsite);
+
+  // Embed-mode step 1 validation: business name + industry + existing URL
+  const embedStep1Valid = Boolean(
+    businessName.trim() && industry && existingSiteUrl.trim()
+  );
 
   function handleNext() {
     if (step === 1 && !step1Valid) {
@@ -245,6 +295,232 @@ export default function OnboardingView() {
   // If the user already has an org, we're redirecting
   if (org) return null;
 
+  // ---------- DECISION SCREEN: "Do you already have a website?" ----------
+  if (mode === "choose") {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50/60 via-background to-background flex flex-col">
+        <header className="border-b bg-white/85 backdrop-blur">
+          <div className="mx-auto max-w-2xl px-4 py-4 flex items-center gap-2">
+            <div className="grid size-7 place-items-center rounded-md bg-emerald-600 text-white">
+              <Sparkles className="size-4" />
+            </div>
+            <span className="font-semibold text-slate-900">Lead Machine</span>
+          </div>
+        </header>
+        <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-10">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 mb-3">
+              <Sparkles className="size-3.5" /> Welcome to Lead Machine
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Do you already have a website?
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+              Either way, you get AI lead capture, WhatsApp notifications, and a lead dashboard.
+              We just change which door the leads walk through.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Build me a website */}
+            <button
+              type="button"
+              onClick={() => setMode("generate")}
+              className="group text-left rounded-2xl border-2 border-emerald-200 bg-white p-6 transition-all hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-100/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+            >
+              <div className="mb-4 grid size-11 place-items-center rounded-xl bg-emerald-100 text-emerald-700 group-hover:scale-110 transition-transform">
+                <Wand2 className="size-5" />
+              </div>
+              <h2 className="font-semibold text-slate-900">No — build me one</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                AI writes your site in 60 seconds. Professional, mobile-ready, lead-capture built in.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-emerald-700">
+                Generate a website <ArrowRight className="size-3.5" />
+              </span>
+            </button>
+
+            {/* I already have a website */}
+            <button
+              type="button"
+              onClick={() => setMode("embed")}
+              className="group text-left rounded-2xl border-2 border-slate-200 bg-white p-6 transition-all hover:border-emerald-500 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+            >
+              <div className="mb-4 grid size-11 place-items-center rounded-xl bg-slate-100 text-slate-700 group-hover:scale-110 transition-transform">
+                <Code2 className="size-5" />
+              </div>
+              <h2 className="font-semibold text-slate-900">Yes — I have one</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Keep your current site. Paste one snippet and our lead form + WhatsApp bot appear on it.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-slate-700 group-hover:text-emerald-700">
+                Get the embed snippet <ArrowRight className="size-3.5" />
+              </span>
+            </button>
+          </div>
+
+          <p className="mt-8 text-center text-xs text-muted-foreground">
+            Don&apos;t worry — you can switch modes later from Settings.
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  // ---------- EMBED MODE: keep existing site, get a snippet ----------
+  if (mode === "embed") {
+    const embedSlug = (createdOrg?.slug || businessName.trim())
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 50);
+    const snippet = `<script src="https://leadmachine.app/embed.js?slug=${embedSlug}" async></script>`;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50/60 via-background to-background">
+        <header className="sticky top-0 z-20 border-b bg-white/85 backdrop-blur">
+          <div className="mx-auto max-w-2xl px-4 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                onClick={() => {
+                  if (embedStep === 1) setMode("choose");
+                  else setEmbedStep(1);
+                }}
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-slate-900"
+              >
+                <ArrowLeft className="size-4" /> Back
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn("flex size-7 items-center justify-center rounded-full text-xs font-semibold", embedStep >= 1 ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground")}>1</div>
+              <span className={cn("text-xs", embedStep >= 1 ? "text-emerald-700 font-medium" : "text-muted-foreground")}>Your business</span>
+              <div className="flex-1 h-0.5 mx-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-emerald-600 transition-all" style={{ width: embedStep >= 2 ? "100%" : "0%" }} />
+              </div>
+              <div className={cn("flex size-7 items-center justify-center rounded-full text-xs font-semibold", embedStep >= 2 ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground")}>2</div>
+              <span className={cn("text-xs hidden sm:inline", embedStep >= 2 ? "text-emerald-700 font-medium" : "text-muted-foreground")}>Embed snippet</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+          <Card className="shadow-sm border-emerald-100/60">
+            <CardContent className="p-6 sm:p-8 min-h-[420px]">
+              <AnimatePresence mode="wait">
+                {embedStep === 1 && (
+                  <motion.div key="embed1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="space-y-5">
+                    <div>
+                      <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 mb-3">
+                        <Code2 className="size-3.5" /> Embed mode
+                      </div>
+                      <h2 className="text-2xl font-bold tracking-tight">Tell us about your business</h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        We&apos;ll set up the lead engine. You keep your existing website.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="embBusinessName">Business name <span className="text-rose-500">*</span></Label>
+                      <Input id="embBusinessName" value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="MVR Law" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="embIndustry">Industry <span className="text-rose-500">*</span></Label>
+                      <Select value={industry} onValueChange={setIndustry}>
+                        <SelectTrigger id="embIndustry" className="w-full"><SelectValue placeholder="Select your industry" /></SelectTrigger>
+                        <SelectContent>
+                          {INDUSTRIES.map((i) => (
+                            <SelectItem key={i.value} value={i.value}>
+                              <span className="mr-1.5">{INDUSTRY_PRESETS[i.value]?.emoji ?? "✨"}</span>{i.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="embUrl">Your existing website URL <span className="text-rose-500">*</span></Label>
+                      <Input id="embUrl" value={existingSiteUrl} onChange={(e) => setExistingSiteUrl(e.target.value)} placeholder="https://mvrlaw.co.za" inputMode="url" />
+                      <p className="text-xs text-muted-foreground">We&apos;ll add a floating lead-capture widget to this site.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="embWhatsapp">WhatsApp number for lead notifications <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                      <Input id="embWhatsapp" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="+27 82 123 4567" inputMode="tel" />
+                    </div>
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        onClick={() => {
+                          if (!embedStep1Valid) { toast.error("Please fill in all required fields"); return; }
+                          setEmbedStep(2);
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        Get my snippet <ArrowRight className="size-4" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {embedStep === 2 && (
+                  <motion.div key="embed2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="space-y-5">
+                    {embedCreating ? (
+                      <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <Loader2 className="size-10 animate-spin text-emerald-600 mb-4" />
+                        <h2 className="text-lg font-semibold">Setting up your lead engine…</h2>
+                        <p className="text-sm text-muted-foreground mt-1">Creating your dashboard and snippet.</p>
+                      </div>
+                    ) : embedCreated ? (
+                      <>
+                        <div className="text-center mb-6">
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15 }} className="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-emerald-100">
+                            <CheckCircle2 className="size-9 text-emerald-600" />
+                          </motion.div>
+                          <h2 className="text-2xl font-bold tracking-tight">Your lead engine is ready! 🎉</h2>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Paste this snippet before the <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">&lt;/body&gt;</code> tag on your existing website.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1.5"><Code2 className="size-3.5" /> Embed snippet</Label>
+                          <pre className="rounded-xl border bg-slate-900 p-4 text-xs text-emerald-300 overflow-x-auto"><code>{snippet}</code></pre>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={() => { navigator.clipboard?.writeText(snippet); toast.success("Snippet copied to clipboard"); }}
+                          >
+                            <Copy className="size-3.5" /> Copy snippet
+                          </Button>
+                        </div>
+
+                        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-xs text-amber-800">
+                          <p className="font-semibold mb-1">📝 Note</p>
+                          <p>The floating embed widget ships in v1.1. For now, use your Lead Machine campaign page at <code className="rounded bg-amber-100 px-1 py-0.5">/?site={embedSlug}</code> as a dedicated landing page for ads and WhatsApp links.</p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                          <Button onClick={handleAction.bind(null, "dashboard")} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+                            <Rocket className="size-4" /> Go to Dashboard
+                          </Button>
+                          <Button onClick={handleAction.bind(null, "whatsapp")} variant="outline" className="flex-1">
+                            <MessageCircle className="size-4" /> Open Settings
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <p className="text-sm text-muted-foreground">Something went wrong. Go back and try again.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
+  // ---------- GENERATE MODE: the existing 4-step wizard ----------
   const progressPct = ((step - 1) / (STEPS.length - 1)) * 100;
   const industryPreset = industry ? INDUSTRY_PRESETS[industry] : null;
 

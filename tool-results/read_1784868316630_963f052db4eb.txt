@@ -1,0 +1,672 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useState } from "react";
+     4→import { motion } from "framer-motion";
+     5→import {
+     6→  ArrowLeft,
+     7→  Sparkles,
+     8→  Phone,
+     9→  Mail,
+    10→  MapPin,
+    11→  MessageCircle,
+    12→  ChevronRight,
+    13→  Check,
+    14→  Star,
+    15→  ShieldCheck,
+    16→  Clock,
+    17→  Zap,
+    18→} from "lucide-react";
+    19→import {
+    20→  Accordion,
+    21→  AccordionContent,
+    22→  AccordionItem,
+    23→  AccordionTrigger,
+    24→} from "@/components/ui/accordion";
+    25→import { Skeleton } from "@/components/ui/skeleton";
+    26→import { Button } from "@/components/ui/button";
+    27→import { useAppStore } from "@/store/app-store";
+    28→import { useAsync, apiClient } from "@/lib/api-client";
+    29→import { LeadForm } from "@/components/lead/lead-form";
+    30→import { ChatWidget } from "@/components/ai/chat-widget";
+    31→
+    32→type PublicOrg = {
+    33→  name: string;
+    34→  slug: string;
+    35→  industry: string;
+    36→  services: string | null;
+    37→  primaryColor: string;
+    38→  whatsappNumber: string | null;
+    39→  whatsappConnected: boolean;
+    40→};
+    41→
+    42→type PublicWebsite = {
+    43→  id: string;
+    44→  template: string;
+    45→  heroHeadline: string | null;
+    46→  heroSubtext: string | null;
+    47→  aboutText: string | null;
+    48→  services: { name: string; description: string }[];
+    49→  faq: { question: string; answer: string }[];
+    50→  ctaText: string | null;
+    51→};
+    52→
+    53→const INDUSTRY_EMOJI: Record<string, string> = {
+    54→  legal: "⚖️",
+    55→  consulting: "💼",
+    56→  hr: "🤝",
+    57→  coaching: "🎯",
+    58→  wellness: "🌿",
+    59→  accounting: "📊",
+    60→  construction: "🏗️",
+    61→  insurance: "🛡️",
+    62→  other: "✨",
+    63→};
+    64→
+    65→export default function PublicSiteView() {
+    66→  const publicSlug = useAppStore((s) => s.publicSlug);
+    67→  const navigate = useAppStore((s) => s.navigate);
+    68→  const user = useAppStore((s) => s.user);
+    69→
+    70→  const { data, loading, error } = useAsync(
+    71→    () => (publicSlug ? apiClient.getPublicWebsite(publicSlug) : Promise.reject(new Error("no-slug"))),
+    72→    [publicSlug]
+    73→  );
+    74→
+    75→  const [contactRef, setContactRef] = useState<HTMLDivElement | null>(null);
+    76→
+    77→  useEffect(() => {
+    78→    if (!publicSlug) navigate("dashboard");
+    79→  }, [publicSlug, navigate]);
+    80→
+    81→  if (!publicSlug) return null;
+    82→
+    83→  if (loading) return <PublicSiteSkeleton />;
+    84→
+    85→  if (error || !data) {
+    86→    return (
+    87→      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
+    88→        <div className="size-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+    89→          <ShieldCheck className="size-8 text-amber-600" />
+    90→        </div>
+    91→        <h1 className="text-2xl font-bold text-slate-900">This site is not published yet</h1>
+    92→        <p className="text-slate-600 mt-2 max-w-md">
+    93→          The business owner hasn&apos;t published their website yet. Please check back later or
+    94→          contact them directly.
+    95→        </p>
+    96→        {user && (
+    97→          <Button className="mt-6" variant="outline" onClick={() => navigate("dashboard")}>
+    98→            <ArrowLeft className="size-4" />
+    99→            Back to dashboard
+   100→          </Button>
+   101→        )}
+   102→      </div>
+   103→    );
+   104→  }
+   105→
+   106→  const org = data.org as PublicOrg;
+   107→  const website = data.website as PublicWebsite;
+   108→  const brand = org.primaryColor || "#059669";
+   109→
+   110→  return (
+   111→    <div
+   112→      className="min-h-screen bg-white"
+   113→      style={{ ["--brand" as any]: brand }}
+   114→    >
+   115→      {/* Back to dashboard (only for logged-in owners) */}
+   116→      {user && (
+   117→        <button
+   118→          onClick={() => navigate("dashboard", { tab: "website" })}
+   119→          className="fixed top-3 left-3 z-40 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-slate-200 text-slate-700 hover:bg-white shadow-sm transition-colors"
+   120→        >
+   121→          <ArrowLeft className="size-3.5" />
+   122→          Back to dashboard
+   123→        </button>
+   124→      )}
+   125→
+   126→      <PublicSiteContent
+   127→        org={org}
+   128→        website={website}
+   129→        brand={brand}
+   130→        contactRef={contactRef}
+   131→        setContactRef={setContactRef}
+   132→      />
+   133→
+   134→      <ChatWidget slug={org.slug} businessName={org.name} />
+   135→    </div>
+   136→  );
+   137→}
+   138→
+   139→/* ---------------------------- content ---------------------------- */
+   140→
+   141→function PublicSiteContent({
+   142→  org,
+   143→  website,
+   144→  brand,
+   145→  contactRef,
+   146→  setContactRef,
+   147→}: {
+   148→  org: PublicOrg;
+   149→  website: PublicWebsite;
+   150→  brand: string;
+   151→  contactRef: HTMLDivElement | null;
+   152→  setContactRef: (el: HTMLDivElement | null) => void;
+   153→}) {
+   154→  const industryEmoji = INDUSTRY_EMOJI[org.industry] ?? "✨";
+   155→  const headline = website.heroHeadline || `Welcome to ${org.name}`;
+   156→  const subtext =
+   157→    website.heroSubtext ||
+   158→    `Trusted ${org.industry.replace(/^\w/, (c) => c.toUpperCase())} services, built for South African businesses.`;
+   159→  const about = website.aboutText || `${org.name} is proud to serve our community with professional, reliable service. Our team is committed to delivering real results and building long-term relationships with every client.`;
+   160→  const cta = website.ctaText || "Get a Free Consultation";
+   161→
+   162→  function scrollToContact() {
+   163→    contactRef?.scrollIntoView({ behavior: "smooth", block: "start" });
+   164→  }
+   165→
+   166→  return (
+   167→    <>
+   168→      {/* Header */}
+   169→      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+   170→        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+   171→          <div className="flex items-center gap-2.5 min-w-0">
+   172→            <span
+   173→              className="size-9 shrink-0 rounded-lg flex items-center justify-center text-lg shadow-sm"
+   174→              style={{ backgroundColor: `${brand}15`, border: `1px solid ${brand}30` }}
+   175→            >
+   176→              {industryEmoji}
+   177→            </span>
+   178→            <div className="min-w-0">
+   179→              <p className="font-semibold text-slate-900 truncate leading-tight">{org.name}</p>
+   180→              <p className="text-[11px] text-slate-500 capitalize leading-tight">
+   181→                {org.industry} • South Africa
+   182→              </p>
+   183→            </div>
+   184→          </div>
+   185→
+   186→          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+   187→            <button onClick={scrollToContact} className="hover:text-slate-900 transition-colors">
+   188→              Services
+   189→            </button>
+   190→            <button onClick={scrollToContact} className="hover:text-slate-900 transition-colors">
+   191→              About
+   192→            </button>
+   193→            <button onClick={scrollToContact} className="hover:text-slate-900 transition-colors">
+   194→              FAQ
+   195→            </button>
+   196→            <button onClick={scrollToContact} className="hover:text-slate-900 transition-colors">
+   197→              Contact
+   198→            </button>
+   199→          </nav>
+   200→
+   201→          <button
+   202→            onClick={scrollToContact}
+   203→            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm hover:opacity-90 transition-opacity"
+   204→            style={{ backgroundColor: brand }}
+   205→          >
+   206→            {cta}
+   207→            <ChevronRight className="size-3.5" />
+   208→          </button>
+   209→        </div>
+   210→      </header>
+   211→
+   212→      {/* Hero */}
+   213→      <section className="relative overflow-hidden">
+   214→        <div
+   215→          aria-hidden
+   216→          className="absolute inset-0 -z-10"
+   217→          style={{
+   218→            background: `radial-gradient(60% 80% at 80% 20%, ${brand}18 0%, transparent 60%), radial-gradient(50% 60% at 10% 90%, ${brand}12 0%, transparent 55%)`,
+   219→          }}
+   220→        />
+   221→        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24 grid lg:grid-cols-2 gap-10 items-center">
+   222→          <motion.div
+   223→            initial={{ opacity: 0, y: 20 }}
+   224→            animate={{ opacity: 1, y: 0 }}
+   225→            transition={{ duration: 0.5 }}
+   226→          >
+   227→            <span
+   228→              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-5"
+   229→              style={{ backgroundColor: `${brand}14`, color: brand }}
+   230→            >
+   231→              <Sparkles className="size-3.5" />
+   232→              {org.industry.replace(/^\w/, (c) => c.toUpperCase())} experts, ready to help
+   233→            </span>
+   234→            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 leading-[1.05]">
+   235→              {headline}
+   236→            </h1>
+   237→            <p className="mt-5 text-lg text-slate-600 max-w-xl leading-relaxed">{subtext}</p>
+   238→            <div className="mt-8 flex flex-wrap items-center gap-3">
+   239→              <button
+   240→                onClick={scrollToContact}
+   241→                className="inline-flex items-center gap-2 text-base font-semibold text-white px-6 py-3.5 rounded-xl shadow-md hover:opacity-90 transition-opacity"
+   242→                style={{ backgroundColor: brand }}
+   243→              >
+   244→                {cta}
+   245→                <ChevronRight className="size-4" />
+   246→              </button>
+   247→              <div className="flex items-center gap-2 text-sm text-slate-600">
+   248→                <div className="flex -space-x-1">
+   249→                  {["JM", "TK", "SL", "★"].map((label, i) => (
+   250→                    <span
+   251→                      key={i}
+   252→                      className="size-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold text-white"
+   253→                      style={{ backgroundColor: brand, opacity: 1 - i * 0.15 }}
+   254→                    >
+   255→                      {label}
+   256→                    </span>
+   257→                  ))}
+   258→                </div>
+   259→                <div>
+   260→                  <div className="flex items-center gap-0.5">
+   261→                    {[0, 1, 2, 3, 4].map((i) => (
+   262→                      <Star key={i} className="size-3.5 fill-amber-400 text-amber-400" />
+   263→                    ))}
+   264→                  </div>
+   265→                  <p className="text-[11px] text-slate-500">Trusted by SA businesses</p>
+   266→                </div>
+   267→              </div>
+   268→            </div>
+   269→          </motion.div>
+   270→
+   271→          {/* Decorative card cluster */}
+   272→          <motion.div
+   273→            initial={{ opacity: 0, scale: 0.95 }}
+   274→            animate={{ opacity: 1, scale: 1 }}
+   275→            transition={{ duration: 0.5, delay: 0.15 }}
+   276→            className="relative hidden lg:block"
+   277→          >
+   278→            <div
+   279→              className="absolute -inset-4 rounded-3xl -z-10"
+   280→              style={{ background: `linear-gradient(135deg, ${brand}25, transparent 70%)` }}
+   281→            />
+   282→            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6">
+   283→              <div className="flex items-center gap-2 mb-4">
+   284→                <span
+   285→                  className="size-2 rounded-full animate-pulse"
+   286→                  style={{ backgroundColor: brand }}
+   287→                />
+   288→                <span className="text-xs font-medium text-slate-500">Live enquiry feed</span>
+   289→              </div>
+   290→              <div className="space-y-3">
+   291→                {[
+   292→                  { name: "Thandiwe N.", service: "Booked a consultation", time: "2m ago" },
+   293→                  { name: "Sipho M.", service: "Requested a quote", time: "8m ago" },
+   294→                  { name: "Lerato K.", service: "Asked about services", time: "15m ago" },
+   295→                ].map((item, i) => (
+   296→                  <motion.div
+   297→                    key={i}
+   298→                    initial={{ opacity: 0, x: 12 }}
+   299→                    animate={{ opacity: 1, x: 0 }}
+   300→                    transition={{ delay: 0.4 + i * 0.15 }}
+   301→                    className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50"
+   302→                  >
+   303→                    <span
+   304→                      className="size-9 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
+   305→                      style={{ backgroundColor: brand }}
+   306→                    >
+   307→                      {item.name.split(" ").map((n) => n[0]).join("")}
+   308→                    </span>
+   309→                    <div className="flex-1 min-w-0">
+   310→                      <p className="text-sm font-medium text-slate-800 truncate">{item.name}</p>
+   311→                      <p className="text-xs text-slate-500 truncate">{item.service}</p>
+   312→                    </div>
+   313→                    <span className="text-[10px] text-slate-400 shrink-0">{item.time}</span>
+   314→                  </motion.div>
+   315→                ))}
+   316→              </div>
+   317→              <div
+   318→                className="mt-4 flex items-center gap-2 p-3 rounded-xl text-xs font-medium"
+   319→                style={{ backgroundColor: `${brand}10`, color: brand }}
+   320→              >
+   321→                <Zap className="size-3.5" />
+   322→                AI-powered responses • Avg. reply &lt; 2 hours
+   323→              </div>
+   324→            </div>
+   325→          </motion.div>
+   326→        </div>
+   327→      </section>
+   328→
+   329→      {/* Trust bar */}
+   330→      <section className="border-y border-slate-100 bg-slate-50/60">
+   331→        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+   332→          {[
+   333→            { icon: Clock, label: "Fast response", value: "< 2 hrs" },
+   334→            { icon: ShieldCheck, label: "POPIA compliant", value: "100%" },
+   335→            { icon: Star, label: "Avg. rating", value: "4.9 / 5" },
+   336→            { icon: Sparkles, label: "AI-powered", value: "Always on" },
+   337→          ].map((s) => (
+   338→            <div key={s.label} className="flex items-center gap-2.5">
+   339→              <span
+   340→                className="size-9 rounded-lg flex items-center justify-center shrink-0"
+   341→                style={{ backgroundColor: `${brand}14`, color: brand }}
+   342→              >
+   343→                <s.icon className="size-4" />
+   344→              </span>
+   345→              <div>
+   346→                <p className="text-sm font-semibold text-slate-900 leading-tight">{s.value}</p>
+   347→                <p className="text-[11px] text-slate-500 leading-tight">{s.label}</p>
+   348→              </div>
+   349→            </div>
+   350→          ))}
+   351→        </div>
+   352→      </section>
+   353→
+   354→      {/* Services */}
+   355→      <section id="services" className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20">
+   356→        <div className="text-center max-w-2xl mx-auto mb-12">
+   357→          <span
+   358→            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-3"
+   359→            style={{ backgroundColor: `${brand}14`, color: brand }}
+   360→          >
+   361→            <Sparkles className="size-3.5" />
+   362→            What we offer
+   363→          </span>
+   364→          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+   365→            Our services
+   366→          </h2>
+   367→          <p className="mt-3 text-slate-600">
+   368→            Professional solutions tailored to your needs.
+   369→          </p>
+   370→        </div>
+   371→
+   372→        {website.services.length === 0 ? (
+   373→          <p className="text-center text-slate-500 text-sm">
+   374→            Service details coming soon. Get in touch to learn more.
+   375→          </p>
+   376→        ) : (
+   377→          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+   378→            {website.services.map((s, i) => (
+   379→              <motion.div
+   380→                key={i}
+   381→                initial={{ opacity: 0, y: 16 }}
+   382→                whileInView={{ opacity: 1, y: 0 }}
+   383→                viewport={{ once: true, margin: "-50px" }}
+   384→                transition={{ duration: 0.4, delay: i * 0.05 }}
+   385→                className="group bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all"
+   386→              >
+   387→                <div
+   388→                  className="size-11 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+   389→                  style={{ backgroundColor: `${brand}14`, color: brand }}
+   390→                >
+   391→                  <Sparkles className="size-5" />
+   392→                </div>
+   393→                <h3 className="font-semibold text-slate-900 text-lg">{s.name}</h3>
+   394→                <p className="mt-2 text-sm text-slate-600 leading-relaxed">{s.description}</p>
+   395→              </motion.div>
+   396→            ))}
+   397→          </div>
+   398→        )}
+   399→      </section>
+   400→
+   401→      {/* About */}
+   402→      <section id="about" className="bg-slate-50/60 border-y border-slate-100">
+   403→        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 grid lg:grid-cols-2 gap-12 items-center">
+   404→          <div>
+   405→            <span
+   406→              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-3"
+   407→              style={{ backgroundColor: `${brand}14`, color: brand }}
+   408→            >
+   409→              About us
+   410→            </span>
+   411→            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+   412→              Why choose {org.name}?
+   413→            </h2>
+   414→            <p className="mt-5 text-slate-700 leading-relaxed whitespace-pre-wrap">{about}</p>
+   415→            <div className="mt-6 grid grid-cols-2 gap-3 max-w-md">
+   416→              {[
+   417→                "Local SA expertise",
+   418→                "Fast turnaround",
+   419→                "Transparent pricing",
+   420→                "Dedicated support",
+   421→              ].map((p) => (
+   422→                <div key={p} className="flex items-center gap-2 text-sm text-slate-700">
+   423→                  <span
+   424→                    className="size-5 rounded-full flex items-center justify-center shrink-0"
+   425→                    style={{ backgroundColor: `${brand}18`, color: brand }}
+   426→                  >
+   427→                    <Check className="size-3" strokeWidth={3} />
+   428→                  </span>
+   429→                  {p}
+   430→                </div>
+   431→              ))}
+   432→            </div>
+   433→          </div>
+   434→
+   435→          <div className="relative">
+   436→            <div
+   437→              className="aspect-[4/3] rounded-3xl shadow-xl flex items-center justify-center overflow-hidden relative"
+   438→              style={{
+   439→                background: `linear-gradient(135deg, ${brand}, ${brand}cc)`,
+   440→              }}
+   441→            >
+   442→              <div className="absolute inset-0 opacity-20" style={{
+   443→                backgroundImage: "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 40%), radial-gradient(circle at 70% 80%, rgba(255,255,255,0.3) 0%, transparent 40%)"
+   444→              }} />
+   445→              <div className="relative text-center text-white p-8">
+   446→                <span className="text-7xl mb-3 block">{industryEmoji}</span>
+   447→                <p className="text-2xl font-bold">{org.name}</p>
+   448→                <p className="text-white/80 text-sm mt-1">Serving South Africa with pride 🇿🇦</p>
+   449→              </div>
+   450→            </div>
+   451→            <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg border border-slate-200 px-4 py-3 flex items-center gap-2">
+   452→              <div className="flex -space-x-1.5">
+   453→                {[0, 1, 2].map((i) => (
+   454→                  <span
+   455→                    key={i}
+   456→                    className="size-7 rounded-full border-2 border-white flex items-center justify-center text-[9px] font-bold text-white"
+   457→                    style={{ backgroundColor: brand }}
+   458→                  >
+   459→                    ★
+   460→                  </span>
+   461→                ))}
+   462→              </div>
+   463→              <div>
+   464→                <p className="text-xs font-semibold text-slate-900">4.9 / 5 rating</p>
+   465→                <p className="text-[10px] text-slate-500">from 120+ happy clients</p>
+   466→              </div>
+   467→            </div>
+   468→          </div>
+   469→        </div>
+   470→      </section>
+   471→
+   472→      {/* FAQ */}
+   473→      {website.faq.length > 0 && (
+   474→        <section id="faq" className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-20">
+   475→          <div className="text-center mb-10">
+   476→            <span
+   477→              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-3"
+   478→              style={{ backgroundColor: `${brand}14`, color: brand }}
+   479→            >
+   480→              FAQ
+   481→            </span>
+   482→            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+   483→              Frequently asked questions
+   484→            </h2>
+   485→          </div>
+   486→          <Accordion type="single" collapsible className="w-full">
+   487→            {website.faq.map((f, i) => (
+   488→              <AccordionItem
+   489→                key={i}
+   490→                value={`item-${i}`}
+   491→                className="border-slate-200"
+   492→              >
+   493→                <AccordionTrigger className="text-left text-base font-medium text-slate-900 hover:no-underline">
+   494→                  {f.question}
+   495→                </AccordionTrigger>
+   496→                <AccordionContent className="text-slate-600 leading-relaxed">
+   497→                  {f.answer}
+   498→                </AccordionContent>
+   499→              </AccordionItem>
+   500→            ))}
+   501→          </Accordion>
+   502→        </section>
+   503→      )}
+   504→
+   505→      {/* Contact / Lead form */}
+   506→      <section
+   507→        id="contact"
+   508→        ref={setContactRef}
+   509→        className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16"
+   510→      >
+   511→        <div className="grid lg:grid-cols-2 gap-10 items-start">
+   512→          <div>
+   513→            <span
+   514→              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-3"
+   515→              style={{ backgroundColor: `${brand}14`, color: brand }}
+   516→            >
+   517→              <MessageCircle className="size-3.5" />
+   518→              Get in touch
+   519→            </span>
+   520→            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+   521→              Let&apos;s get you sorted.
+   522→            </h2>
+   523→            <p className="mt-3 text-slate-600 leading-relaxed">
+   524→              Fill in the form and our team will WhatsApp or call you back within 2 hours during
+   525→              business hours. No spam, ever.
+   526→            </p>
+   527→
+   528→            <div className="mt-8 space-y-4">
+   529→              {org.whatsappNumber && (
+   530→                <ContactRow
+   531→                  icon={MessageCircle}
+   532→                  label="WhatsApp"
+   533→                  value={org.whatsappNumber}
+   534→                  brand={brand}
+   535→                />
+   536→              )}
+   537→              <ContactRow
+   538→                icon={Phone}
+   539→                label="Phone"
+   540→                value={org.whatsappNumber || "Available on request"}
+   541→                brand={brand}
+   542→              />
+   543→              <ContactRow
+   544→                icon={Mail}
+   545→                label="Email"
+   546→                value="We'll respond by WhatsApp first"
+   547→                brand={brand}
+   548→              />
+   549→              <ContactRow
+   550→                icon={MapPin}
+   551→                label="Location"
+   552→                value="South Africa 🇿🇦"
+   553→                brand={brand}
+   554→              />
+   555→            </div>
+   556→
+   557→            <div
+   558→              className="mt-8 p-4 rounded-xl flex items-start gap-3"
+   559→              style={{ backgroundColor: `${brand}0a` }}
+   560→            >
+   561→              <ShieldCheck className="size-5 shrink-0 mt-0.5" style={{ color: brand }} />
+   562→              <p className="text-xs text-slate-600 leading-relaxed">
+   563→                Your information is protected under POPIA. We only use it to respond to your enquiry
+   564→                and will never share it with third parties.
+   565→              </p>
+   566→            </div>
+   567→          </div>
+   568→
+   569→          <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6 sm:p-8">
+   570→            <h3 className="text-xl font-bold text-slate-900 mb-1">{cta}</h3>
+   571→            <p className="text-sm text-slate-500 mb-6">
+   572→              Takes 30 seconds. We&apos;ll be in touch shortly.
+   573→            </p>
+   574→            <LeadForm slug={org.slug} businessName={org.name} ctaText={cta} />
+   575→          </div>
+   576→        </div>
+   577→      </section>
+   578→
+   579→      {/* Footer */}
+   580→      <footer className="border-t border-slate-200 bg-slate-900 text-slate-300">
+   581→        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 grid sm:grid-cols-2 gap-6 items-center">
+   582→          <div>
+   583→            <div className="flex items-center gap-2.5">
+   584→              <span
+   585→                className="size-9 rounded-lg flex items-center justify-center text-lg"
+   586→                style={{ backgroundColor: `${brand}25` }}
+   587→              >
+   588→                {industryEmoji}
+   589→              </span>
+   590→              <div>
+   591→                <p className="font-semibold text-white">{org.name}</p>
+   592→                <p className="text-[11px] text-slate-400 capitalize">{org.industry}</p>
+   593→              </div>
+   594→            </div>
+   595→            <p className="text-xs text-slate-400 mt-3 max-w-sm">
+   596→              Proudly serving South African businesses with professional, reliable service.
+   597→            </p>
+   598→          </div>
+   599→          <div className="sm:text-right">
+   600→            <p className="text-xs text-slate-400">
+   601→              © {new Date().getFullYear()} {org.name}. All rights reserved.
+   602→            </p>
+   603→            <a
+   604→              href="#"
+   605→              className="text-xs text-slate-400 hover:text-white underline underline-offset-2 mt-1 inline-block"
+   606→            >
+   607→              Privacy Policy (POPIA)
+   608→            </a>
+   609→            <p className="mt-4 text-[11px] text-slate-500 inline-flex items-center gap-1.5">
+   610→              Powered by{" "}
+   611→              <span className="font-semibold text-emerald-400">Lead Machine</span> 🇿🇦
+   612→            </p>
+   613→          </div>
+   614→        </div>
+   615→      </footer>
+   616→    </>
+   617→  );
+   618→}
+   619→
+   620→function ContactRow({
+   621→  icon: Icon,
+   622→  label,
+   623→  value,
+   624→  brand,
+   625→}: {
+   626→  icon: React.ElementType;
+   627→  label: string;
+   628→  value: string;
+   629→  brand: string;
+   630→}) {
+   631→  return (
+   632→    <div className="flex items-center gap-3">
+   633→      <span
+   634→        className="size-10 rounded-xl flex items-center justify-center shrink-0"
+   635→        style={{ backgroundColor: `${brand}14`, color: brand }}
+   636→      >
+   637→        <Icon className="size-4.5" />
+   638→      </span>
+   639→      <div>
+   640→        <p className="text-[11px] text-slate-500 uppercase tracking-wide">{label}</p>
+   641→        <p className="text-sm font-medium text-slate-900">{value}</p>
+   642→      </div>
+   643→    </div>
+   644→  );
+   645→}
+   646→
+   647→/* ---------------------------- skeleton ---------------------------- */
+   648→
+   649→function PublicSiteSkeleton() {
+   650→  return (
+   651→    <div className="min-h-screen bg-white">
+   652→      <div className="border-b border-slate-200">
+   653→        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
+   654→          <Skeleton className="h-9 w-48" />
+   655→          <Skeleton className="h-8 w-28" />
+   656→        </div>
+   657→      </div>
+   658→      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 grid lg:grid-cols-2 gap-10">
+   659→        <div className="space-y-4">
+   660→          <Skeleton className="h-6 w-40" />
+   661→          <Skeleton className="h-16 w-full" />
+   662→          <Skeleton className="h-16 w-3/4" />
+   663→          <Skeleton className="h-12 w-48" />
+   664→        </div>
+   665→        <Skeleton className="aspect-[4/3] w-full rounded-3xl" />
+   666→      </div>
+   667→    </div>
+   668→  );
+   669→}
+   670→
+   671→export { PublicSiteView };
+   672→

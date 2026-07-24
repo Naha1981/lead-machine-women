@@ -45,9 +45,12 @@ export const useAppStore = create<AppState>()(
           user,
           org,
           sessionLoading: false,
-          // auto-route based on session state
+          // auto-route based on session state — but NEVER override "public"
+          // (public sites are open to everyone, including logged-out visitors)
           view:
-            user && org
+            s.view === "public"
+              ? s.view
+              : user && org
               ? s.view === "auth" || s.view === "onboarding" || s.view === "landing"
                 ? "dashboard"
                 : s.view

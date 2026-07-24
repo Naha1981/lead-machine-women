@@ -188,3 +188,75 @@ Stage Summary:
 - Single-route SPA constraint respected (only `/` is visible; all nav is client-side).
 - Emerald/teal theme throughout (no blue/indigo). Mobile-first responsive.
 - AI features powered by z-ai-web-dev-sdk (LLM) on the backend only.
+
+---
+Task ID: 3-dark
+Agent: full-stack-developer (dark theme restyle)
+Task: Restyle generated website template to dark theme
+
+Work Log:
+- Read worklog.md for project context and read the full existing src/components/views/public-site-view.tsx (672 lines)
+- Preserved all imports, the PublicSiteView default export + hooks (useAppStore, useAsync, useEffect, useState), PublicSiteContent + ContactRow + PublicSiteSkeleton sub-components, scrollToContact, INDUSTRY_EMOJI map, PublicOrg/PublicWebsite types, LeadForm + ChatWidget mounting + props, framer-motion animations, and all responsive breakpoints — only className/inline-style color values were swapped
+- Rewrote the single file with a near-black (#0a0a0a) root, brand-colored accents, white headlines, slate-300 body, translucent white/[0.03] cards with white/10 borders
+- Ran `bun run lint` — 0 errors, 0 warnings (eslint . clean)
+- Verified dev server: `curl http://localhost:3000/` → 200, dev.log shows "✓ Compiled" with no errors
+
+Stage Summary:
+- Dark theme applied to ONE file only: src/components/views/public-site-view.tsx
+- Did NOT touch lead-form.tsx, chat-widget.tsx, lead-success.tsx, the store, api-client, or any other file
+- LeadForm is mounted unchanged inside a dark card (bg-white/[0.03] border-white/10) — its shadcn inputs will render with their own bg-background as light fields on the dark page (the explicitly-approved premium pattern)
+- Result: Vercel/Linear-style dark business website with the tenant's primaryColor (default #10b981) glowing in CTAs, icon tiles, badges, and the hero radial gradient
+
+Color swaps made:
+- Root bg: bg-white → bg-[#0a0a0a]
+- Default brand fallback: #059669 → #10b981
+- Header: bg-white/90 border-slate-200 → bg-[#0a0a0a]/80 backdrop-blur border-white/10
+- Headings: text-slate-900 → text-white (everywhere)
+- Body copy: text-slate-600 / text-slate-700 → text-slate-300
+- Muted captions: text-slate-500 → text-slate-400 (and text-slate-400 → text-slate-500 for the most-muted timestamps)
+- Nav links: text-slate-600 hover:text-slate-900 → text-slate-300 hover:text-white
+- Hero radial gradient opacity: ${brand}18 → ${brand}22 and ${brand}12 → ${brand}15 (slightly stronger glow on dark)
+- Hero badge / icon tiles: ${brand}14 → ${brand}1f (12% → ~12%, nudged for dark visibility); About checklist ${brand}18 → ${brand}26; POPIA note ${brand}0a → ${brand}12 + border-white/10
+- Avatar group border-2 border-white → border-2 border-[#0a0a0a] (so circles separate against the dark bg, not against white)
+- Live-feed decorative card: bg-white border-slate-200 → bg-white/[0.03] border-white/10; inner rows bg-slate-50 → bg-white/[0.05]
+- Trust bar: border-slate-100 bg-slate-50/60 → border-white/10 bg-white/[0.02]
+- Services cards: bg-white border-slate-200 hover:border-slate-300 hover:shadow-lg → bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]
+- About section band: bg-slate-50/60 border-slate-100 → bg-white/[0.02] border-white/10
+- About rating badge: bg-white border-slate-200 → bg-[#0a0a0a] border-white/10
+- FAQ AccordionItem: border-slate-200 → border-white/10; AccordionTrigger: text-slate-900 → text-white + hover:bg-white/5; AccordionContent: text-slate-600 → text-slate-300
+- Contact form card: bg-white border-slate-200 → bg-white/[0.03] border-white/10
+- ContactRow values: text-slate-900 → text-white
+- Footer: border-slate-200 bg-slate-900 text-slate-300 → border-white/10 bg-[#0a0a0a] text-slate-400; "Lead Machine" word text-emerald-400 → text-slate-500 (per spec, whole "Powered by Lead Machine" line is slate-500)
+- "Back to dashboard" owner pill: bg-white/80 border-slate-200 text-slate-700 hover:bg-white → bg-white/10 backdrop-blur border-white/20 text-white hover:bg-white/20
+- 404 not-published state: bg-slate-50 → bg-[#0a0a0a]; icon tile bg-amber-100 → bg-white/5; icon text-amber-600 → text-amber-400; heading text-slate-900 → text-white; body text-slate-600 → text-slate-400; outline Button given border-white/20 text-white hover:bg-white/10
+- Skeleton: root bg-white → bg-[#0a0a0a]; header border-slate-200 → border-white/10; every Skeleton given bg-white/5 override so it pulses visibly on the near-black bg
+
+---
+Task ID: brain-body-toggle
+Agent: main
+Task: URL-based public access + dark theme restyle + "I already have a website?" onboarding toggle + footer year fix
+
+Work Log:
+- Verified brain (AI generator) + body (/s template) already work end-to-end from previous turn: MVR Law, Azzaro QS sites generated + published + receiving AI-qualified leads.
+- Added URL-based public site access: `/?site=slug` renders PublicSiteView with NO auth required. Updated src/app/page.tsx with a mount effect that reads `?site=` and calls openPublicSite. Fixed store (src/store/app-store.ts) setSession to NEVER override view="public" — public sites are open to logged-out visitors.
+- Restyled src/components/views/public-site-view.tsx to DARK theme (#0a0a0a bg, emerald accent, white headings, slate-300 body, white/[0.03] cards with white/10 borders). Delegated to subagent (Task 3-dark) — same structure/props/imports, only color swaps. LeadForm + ChatWidget untouched.
+- Built "I already have a website?" onboarding toggle (Task 3 from user's prompt). Added to src/components/views/onboarding-view.tsx:
+  - New `mode` state: "choose" | "generate" | "embed" (starts "choose")
+  - Decision screen: two cards — "No, build me one" (generate) vs "Yes, I have one" (embed)
+  - Embed flow (2 steps): Step 1 = business name + industry + existing URL + whatsapp; Step 2 = creates org (no website generation) + shows copyable embed snippet + v1.1 note + Go to Dashboard / Open Settings buttons
+  - Generate flow = existing 4-step wizard (unchanged)
+- Fixed landing footer year: © 2025 → © 2026 (src/components/marketing/landing-footer.tsx)
+- Verified with Agent Browser:
+  1. `/?site=mvr-law` loads MVR Law dark-themed public site (no login) — confirmed root bg rgb(10,10,10), white hero text, services grid, FAQ, lead form.
+  2. Submitted a lead (Sipho Dlamini) on the dark site → AI qualified → WhatsApp confirmation shown (#6CBZSE).
+  3. Signed up fresh → onboarding decision screen appeared ("Do you already have a website?").
+  4. Picked "Yes — I have one" → embed form (business name, industry, existing URL, whatsapp) → "Get my snippet" → success screen with `<script src="https://leadmachine.app/embed.js?slug=vq-comms" async></script>` + copy button + v1.1 note + dashboard/settings buttons.
+  5. "Go to Dashboard" → VQ Comms dashboard loaded (PLAN: TRIAL, no leads yet — correct for embed mode).
+  6. Signed out → landing footer shows "© 2026 NhahaLabs. Built in South Africa 🇿🇦".
+- Lint: 0 errors, 0 warnings. No console errors.
+
+Stage Summary:
+- brain + body DONE and now visitable by URL (the magic is real: `/?site=mvr-law` shows a live AI-generated dark-themed website for MVR Law).
+- Onboarding toggle DONE: businesses with existing sites get the embed-snippet path instead of site generation.
+- Dark theme applied to generated sites per spec (#0a0a0a + emerald accent).
+- Footer year fixed to 2026.
