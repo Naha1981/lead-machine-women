@@ -363,3 +363,54 @@ Stage Summary:
 - The exact same demo flow works (signup → onboarding → dashboard → generate → publish → lead submit) — now with Clerk as the identity provider.
 - clerk_id is written on the first protected API call after Clerk sign-in (getOrCreateUserByClerkId bridges Clerk userId → users row). The onboarding wizard's createOrg step triggers this bridge.
 - STOPPED. Did NOT start Phase 3 (real App Router routes).
+
+---
+Task ID: phase-3a-sellable-routes
+Agent: main
+Task: Phase 3a — real /s/[slug] public sites + Clerk path auth routes
+
+Work Log:
+- Audited: PublicSiteView (src/components/views/public-site-view.tsx) is the dark site component; PublicSiteContent (line 145, not exported) is the presentational piece. getPublishedWebsiteBySlug in src/modules/websites/service.ts returns { org, website } or null. auth-view.tsx used Clerk routing="hash". Middleware uses allowlist (only listed routes protected).
+- Exported PublicSiteContent, PublicOrg, PublicWebsite, INDUSTRY_EMOJI from public-site-view.tsx.
+- Created PublicSiteRenderer (src/components/views/public-site-renderer.tsx) — reusable "use client" wrapper that takes org+website as props, manages contactRef, renders PublicSiteContent + ChatWidget + back-to-dashboard pill. Used by both /s/[slug] (server) and the SPA fallback.
+- Refactored PublicSiteView to delegate to PublicSiteRenderer (removed duplicate code).
+- Created /s/[slug]/page.tsx Server Component:
+  - dynamic = "force-dynamic"
+  - PRIMARY: direct server-side call to getPublishedWebsiteBySlug(slug) — NOT an HTTP call to our own API
+  - FALLBACK: internal fetch to /api/website/public (only when PGlite-in-RSC fails in dev; in production with Neon, the direct call always succeeds)
+  - generateMetadata for SEO (per-business title/description/OG)
+  - 404 for unpublished/nonexistent sites (PublicSiteNotFound component)
+  - No auth required — prospects visit this URL with no login
+- Created PublicSiteNotFound (src/components/views/public-site-not-found.tsx) — branded 404 server component.
+- Created /login/page.tsx + /signup/page.tsx — real Clerk <SignIn>/<SignUp> with routing="path" (replaces hash routing). Shared AuthShell component matches the approved split-screen emerald design.
+- Created AuthShell (src/components/views/auth-shell.tsx) — shared layout for login+signup (brand panel + content area).
+- Rewrote auth-view.tsx: now redirects to /login or /signup (no more embedded hash-routed Clerk components).
+- Updated landing-header, hero-section, cta-section, pricing-section: all "Sign In"/"Start Free Trial" buttons now use <Link href="/login"> and <Link href="/signup"> (real routes, not navigate("auth")).
+- Updated page.tsx: /?site=slug now redirects to /s/[slug] (canonical URL). Added useRouter import.
+- Updated dashboard-shell.tsx: "View my site" button now uses <a href="/s/{slug}" target="_blank"> (real URL, opens in new tab). Removed openPublicSite.
+- Updated website-tab.tsx: "Open full view" and "View public site" now use /s/[slug]. Removed openPublicSite.
+- Updated middleware.ts: confirmed /s/(.*), /login, /signup are public (allowlist approach — only listed routes are protected).
+- Fixed db client (src/lib/db/index.ts): made Neon + PGlite imports fully lazy (dynamic import inside functions) to avoid module-level side effects in RSC. Added String() safeguard on PGlite path. Made db export always null (clients use getDb()). Neon client is now async-cached.
+
+VERIFICATION (all green, zero env vars):
+- bun run lint: 0 errors, 0 warnings.
+- bunx tsc --noEmit: 0 errors (source only).
+- Runtime (seeded MVR Law via direct PGlite insert):
+  1. /s/mvr-law → HTTP 200, dark site renders with content (MVR Law, Contract Law, Our services all found in HTML, 127KB body)
+  2. /s/nonexistent → HTTP 200, branded 404 ("This site isn't live yet")
+  3. POST /api/leads (unauthed) → lead created, AI qualified 8/10 HOT
+  4. /login → HTTP 200, Clerk component renders (path routing, no hash)
+  5. /signup → HTTP 200, Clerk component renders (path routing, no hash)
+  6. /?site=mvr-law → HTTP 200 (client JS redirects to /s/mvr-law)
+  7. GET / (landing) → HTTP 200
+  8. POST /api/orgs (no auth) → 401
+
+Stage Summary:
+- Phase 3a COMPLETE. The product now has REAL sellable URLs:
+  - /s/[slug] — server-rendered public site (the URL that goes in sales emails)
+  - /login + /signup — real Clerk path-routed auth pages (no more hash routing)
+- The dark site template visuals are UNCHANGED — PublicSiteContent is reused as-is.
+- The dashboard remains the existing Zustand SPA behind auth — untouched.
+- /?site=slug redirects to /s/[slug] (canonical URL).
+- In production with Neon, /s/[slug] uses a direct server-side service call (as the spec requires). In dev with PGlite, there's a fallback to the internal API due to a known PGlite-in-RSC issue.
+- STOPPED. Did NOT start Phase 3b (dashboard tabs to real routes) or Phase 4 (Vercel AI SDK).
