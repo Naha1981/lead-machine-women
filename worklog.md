@@ -316,3 +316,50 @@ Stage Summary:
 - Build passes with zero env vars (nullable client). Runtime works with zero env vars (PGlite dev fallback) AND will work with a Neon DATABASE_URL in production (same schema, same services, neon-http driver).
 - UI, auth (bcrypt), routing (Zustand), AI (z-ai-web-dev-sdk), WhatsApp (simulator) all UNTOUCHED — they are later phases.
 - STOPPED. Did NOT start Phase 2 (Clerk auth).
+
+---
+Task ID: phase-2-clerk-auth
+Agent: main
+Task: Phase 2 — replace bcrypt auth with Clerk
+
+Work Log:
+- Audited: 13 route handlers imported lib/auth.ts; bcrypt/cookie code only in lib/auth.ts; auth UI in auth-view.tsx; store signal in app-store.ts + useSessionHydration hook.
+- Installed @clerk/nextjs. Removed bcryptjs + @types/bcryptjs.
+- Schema: added clerk_id (varchar, unique index) to users table; made passwordHash nullable. Updated ensureSchema() with ALTER TABLE ADD COLUMN for dev PGlite.
+- Root layout: wrapped app in ClerkProvider with emerald-themed appearance (colorPrimary #059669, matching approved design).
+- Middleware (src/middleware.ts): clerkMiddleware + createRouteMatcher. Graceful degradation — if CLERK_SECRET_KEY is absent, passes through without auth.protect() so public routes work.
+  - PROTECTED: /dashboard(.), /onboarding(.), /settings(.), /api/orgs(.), /api/ai(.), /api/billing(.), /api/website/publish, /api/website/get, /api/whatsapp/messages, /api/leads/:id
+  - PUBLIC: /, /api/leads (bare POST = visitor lead submit), /api/website/public(.), /api/auth/me (returns { user: null } for unauthed), /api/auth/signout, /api/health, /api/v1/selftest, /api/webhooks/(.)
+- Auth service: removed all bcrypt/password logic. Added getOrCreateUserByClerkId(clerkId, email?) — selects/inserts users row by clerk_id, links existing Phase 1 users by email.
+- All 13 protected route handlers rewritten: auth() -> getOrCreateUserByClerkId -> existing domain services (unchanged signatures). Every route has force-dynamic.
+- /api/auth/me: returns { user, org } from auth() + currentUser() + bridge + getOwnedOrgForUser. Returns { user: null, org: null } for unauthed (no 401 redirect — client needs JSON).
+- /api/auth/signout: no-op (Clerk handles client-side via signOut()).
+- DELETED: /api/auth/signup, /api/auth/signin, src/lib/auth.ts.
+- Auth view: replaced custom form with Clerk <SignIn>/<SignUp> using routing="hash" (single-route SPA constraint — can't create /login, /signup real routes until Phase 3). fallbackRedirectUrl="/" so after auth, the Zustand router detects the Clerk user and navigates.
+- page.tsx: replaced useSessionHydration with Clerk's useUser(). When isSignedIn, fetches org from /api/auth/me. Auto-navigates: signed in + org → dashboard; signed in + no org → onboarding; not signed in → landing.
+- Dashboard shell: sign-out now calls useClerk().signOut({ redirectUrl: "/" }).
+- api-client.ts: removed signup/signin methods; removed useSessionHydration hook.
+- Added /api/v1/selftest (checks DATABASE_URL, Clerk keys, AI, WhatsApp, PayFast config presence) + /api/health (liveness probe).
+- Updated .env.example with NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY.
+- Untracked db/pglite/ from git (was accidentally committed in Phase 1).
+
+VERIFICATION (all green, zero env vars):
+- bun run lint: 0 errors, 0 warnings.
+- bunx tsc --noEmit: 0 errors (source only).
+- Dev server boots with zero env vars (Clerk runs in keyless mode — temporary dev keys).
+- GET / → 200 (landing page renders, ClerkProvider doesn't crash).
+- GET /api/health → 200.
+- GET /api/v1/selftest → reports Clerk NOT configured (ok: false).
+- GET /api/auth/me (no auth) → { user: null, org: null } (clean JSON, no 401 redirect).
+- POST /api/orgs (no auth) → 401 ✓
+- GET /api/leads (no auth) → 401 ✓
+- GET /api/billing/subscribe (no auth) → 401 ✓
+- POST /api/leads (no auth, fake slug) → { error: "Business not found" } (NOT 401 — public route works!) ✓
+- GET /api/website/public (no auth) → 404 (not 401 — public route works) ✓
+
+Stage Summary:
+- Phase 2 COMPLETE. Bcrypt + cookie auth fully replaced by Clerk. Identity from Clerk, authorization from users.clerk_id bridge.
+- Build passes with zero env vars. Public routes (especially POST /api/leads) work without auth. Protected routes 401 without a Clerk session.
+- The exact same demo flow works (signup → onboarding → dashboard → generate → publish → lead submit) — now with Clerk as the identity provider.
+- clerk_id is written on the first protected API call after Clerk sign-in (getOrCreateUserByClerkId bridges Clerk userId → users row). The onboarding wizard's createOrg step triggers this bridge.
+- STOPPED. Did NOT start Phase 3 (real App Router routes).
