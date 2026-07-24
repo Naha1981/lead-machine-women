@@ -1,15 +1,23 @@
 import { NextResponse } from "next/server";
-import { getCurrentOrg } from "@/lib/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
 import { getWebsiteForOrg } from "@/modules/websites/service";
 import type { WebsiteService, WebsiteFaq } from "@/modules/websites/service";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/website/get  — current org's website (for dashboard)
 export async function GET() {
   try {
-    const org = await getCurrentOrg();
-    if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const clerkUser = await currentUser();
+    const dbUser = await getOrCreateUserByClerkId(userId, {
+      email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+    });
+    const org = await getOwnedOrgForUser(dbUser.id);
+    if (!org) return NextResponse.json({ error: "No organization" }, { status: 404 });
+
     const website = await getWebsiteForOrg(org.id);
     if (!website) return NextResponse.json({ website: null });
     return NextResponse.json({

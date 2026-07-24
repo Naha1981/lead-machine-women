@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
-import { getCurrentOrg } from "@/lib/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
 import { listMessagesForOrg } from "@/modules/whatsapp/service";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/whatsapp/messages — recent WhatsApp messages for the current org
 export async function GET() {
   try {
-    const org = await getCurrentOrg();
-    if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const clerkUser = await currentUser();
+    const dbUser = await getOrCreateUserByClerkId(userId, {
+      email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+    });
+    const org = await getOwnedOrgForUser(dbUser.id);
+    if (!org) return NextResponse.json({ error: "No organization" }, { status: 404 });
+
     const messages = await listMessagesForOrg(org.id, 50);
     return NextResponse.json({
       messages: messages.map((m) => ({

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentOrg } from "@/lib/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
 import { generateWebsiteContent } from "@/lib/ai";
 import { saveGeneratedWebsite } from "@/modules/websites/service";
 
@@ -15,8 +16,15 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const org = await getCurrentOrg();
-    if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const clerkUser = await currentUser();
+    const dbUser = await getOrCreateUserByClerkId(userId, {
+      email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+    });
+    const org = await getOwnedOrgForUser(dbUser.id);
+    if (!org) return NextResponse.json({ error: "No organization" }, { status: 404 });
 
     const body = await req.json();
     const parsed = schema.safeParse(body);

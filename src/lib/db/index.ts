@@ -67,10 +67,16 @@ async function ensureSchema(db: any): Promise<void> {
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       "email" varchar(255) NOT NULL UNIQUE,
       "name" varchar(120),
-      "password_hash" text NOT NULL,
+      "password_hash" text,
+      "clerk_id" varchar(120),
       "created_at" timestamptz NOT NULL DEFAULT now(),
       "updated_at" timestamptz NOT NULL DEFAULT now()
     )`,
+    // Phase 2 migration: add clerk_id column + make password_hash nullable for
+    // existing PGlite databases created in Phase 1.
+    `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "clerk_id" varchar(120)`,
+    `ALTER TABLE "users" ALTER COLUMN "password_hash" DROP NOT NULL`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "users_clerk_id_idx" ON "users" ("clerk_id") WHERE "clerk_id" IS NOT NULL`,
     `CREATE TABLE IF NOT EXISTS "organizations" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       "name" varchar(160) NOT NULL,

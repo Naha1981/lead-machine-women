@@ -16,14 +16,24 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ---------- users ----------
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  name: varchar("name", { length: 120 }),
-  passwordHash: text("password_hash").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+// Phase 2: identity comes from Clerk. clerk_id links Clerk userId → our users row.
+// passwordHash is kept (nullable) for backward compat with Phase 1 rows but is
+// no longer used — new users via Clerk have a null passwordHash.
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: varchar("email", { length: 255 }).notNull().unique(),
+    name: varchar("name", { length: 120 }),
+    passwordHash: text("password_hash"),
+    clerkId: varchar("clerk_id", { length: 120 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    clerkIdIdx: uniqueIndex("users_clerk_id_idx").on(t.clerkId),
+  })
+);
 
 // ---------- organizations ----------
 export const organizations = pgTable("organizations", {

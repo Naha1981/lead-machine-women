@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentOrg } from "@/lib/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
 import { getSubscriptionForOrg, setSubscriptionPlan } from "@/modules/billing/service";
 import { PLANS } from "@/lib/constants";
 
@@ -10,11 +11,18 @@ const schema = z.object({
 
 export const dynamic = "force-dynamic";
 
-// POST /api/billing/subscribe — "subscribe" to a plan (simulated Paystack)
 export async function POST(req: Request) {
   try {
-    const org = await getCurrentOrg();
-    if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const clerkUser = await currentUser();
+    const dbUser = await getOrCreateUserByClerkId(userId, {
+      email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+    });
+    const org = await getOwnedOrgForUser(dbUser.id);
+    if (!org) return NextResponse.json({ error: "No organization" }, { status: 404 });
+
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
@@ -46,11 +54,18 @@ export async function POST(req: Request) {
   }
 }
 
-// GET /api/billing/subscribe — current subscription status
 export async function GET() {
   try {
-    const org = await getCurrentOrg();
-    if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const clerkUser = await currentUser();
+    const dbUser = await getOrCreateUserByClerkId(userId, {
+      email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+    });
+    const org = await getOwnedOrgForUser(dbUser.id);
+    if (!org) return NextResponse.json({ error: "No organization" }, { status: 404 });
+
     const sub = await getSubscriptionForOrg(org.id);
     if (!sub) return NextResponse.json({ subscription: null, orgPlan: org.plan });
     return NextResponse.json({

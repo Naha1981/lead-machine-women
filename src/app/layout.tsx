@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,14 +42,41 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
-        {children}
-        <Toaster />
-        <SonnerToaster position="top-right" richColors closeButton />
-      </body>
-    </html>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "#059669",
+          colorBackground: "#ffffff",
+          borderRadius: "0.625rem",
+          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+        },
+        elements: {
+          formButtonPrimary:
+            "bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium",
+          card: "bg-white border border-slate-200 shadow-lg",
+          headerTitle: "text-slate-900",
+          headerSubtitle: "text-slate-600",
+          socialButtonsBlockButton:
+            "border border-slate-200 text-slate-700 hover:bg-slate-50",
+          socialButtonsBlockButtonText: "text-slate-700",
+          dividerLine: "bg-slate-200",
+          dividerText: "text-slate-400",
+          formFieldLabel: "text-slate-700",
+          formFieldInput:
+            "border border-slate-200 text-slate-900 placeholder:text-slate-400",
+          footerActionLink: "text-emerald-600 hover:text-emerald-700",
+        },
+      }}
+    >
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        >
+          {children}
+          <Toaster />
+          <SonnerToaster position="top-right" richColors closeButton />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

@@ -1,4 +1,6 @@
-// Lead Machine — auth service (DB access only; password hashing stays in lib/auth).
+// Lead Machine — auth service (Phase 2: Clerk identity bridge).
+// Identity comes from Clerk. Authorization (tenant scoping) comes from the
+// users.clerk_id → users.id → memberships → organizations bridge.
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { users, memberships, organizations } from "@/lib/db/schema";
@@ -7,34 +9,53 @@ export type AuthUser = {
   id: string;
   email: string;
   name: string | null;
-  passwordHash: string;
+  clerkId: string | null;
 };
 
-export async function getUserByEmail(email: string): Promise<AuthUser | null> {
-  const db = await getDb();
-  const rows = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
-  return rows[0] ?? null;
-}
-
+/**
+ * Look up a user by our internal UUID.
+ */
 export async function getUserById(id: string): Promise<AuthUser | null> {
   const db = await getDb();
   const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return rows[0] ?? null;
 }
 
-export async function createUser(opts: {
-  email: string;
-  name?: string | null;
-  passwordHash: string;
-}): Promise<AuthUser> {
+/**
+ * Bridge a Clerk userId to our users table. If the user doesn't exist yet
+ * (first API call after Clerk sign-up), create a row with the clerk_id.
+ * Returns our DB user record (with internal UUID) so domain services can
+ * scope by ownerId / userId.
+ */
+export async function getOrCreateUserByClerkId(
+  clerkId: string,
+  opts?: { email?: string; name?: string | null }
+): Promise<AuthUser> {
   const db = await getDb();
+
+  // 1) Try to find by clerk_id
+  const existing = await db.select().from(users).where(eq(users.clerkId, clerkId)).limit(1);
+  if (existing[0]) return existing[0];
+
+  // 2) Not found — create. Use Clerk-provided email/name, or fallbacks.
+  const email = opts?.email ?? `clerk-${clerkId}@leadmachine.app`;
+  const name = opts?.name ?? null;
+
+  // Guard: if the email already exists (Phase 1 user), link the clerk_id to it
+  // instead of creating a duplicate.
+  const byEmail = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
+  if (byEmail[0]) {
+    const rows = await db
+      .update(users)
+      .set({ clerkId: clerkId, updatedAt: new Date() })
+      .where(eq(users.id, byEmail[0].id))
+      .returning();
+    return rows[0];
+  }
+
   const rows = await db
     .insert(users)
-    .values({
-      email: opts.email.toLowerCase(),
-      name: opts.name ?? null,
-      passwordHash: opts.passwordHash,
-    })
+    .values({ email: email.toLowerCase(), name, clerkId: clerkId, passwordHash: null })
     .returning();
   return rows[0];
 }
@@ -80,8 +101,7 @@ export async function getOwnedOrgForUser(userId: string): Promise<OrgForOwner | 
     .innerJoin(organizations, eq(memberships.orgId, organizations.id))
     .where(eq(memberships.userId, userId))
     .limit(5);
-  const ownerRow = rows.find((r) => true);
-  return ownerRow ?? null;
+  return rows[0] ?? null;
 }
 
 export async function hasOwnerMembership(userId: string): Promise<boolean> {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser, getCurrentOrg } from "@/lib/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
 import { getOrgBySlug } from "@/modules/orgs/service";
 import { createLead, updateLeadFlags, listLeadsForOrg } from "@/modules/leads/service";
 import { qualifyLead } from "@/lib/ai";
@@ -8,7 +9,8 @@ import { sendProspectConfirmation, sendOwnerNotification } from "@/lib/whatsapp"
 
 export const dynamic = "force-dynamic";
 
-// PUBLIC: POST /api/leads  — submit a lead from a public site (by slug)
+// PUBLIC: POST /api/leads — submit a lead from a public site (by slug)
+// NO AUTH REQUIRED — this is the core revenue flow (visitor → lead).
 const publicSchema = z.object({
   slug: z.string().min(2).max(60),
   name: z.string().min(2).max(120),
@@ -123,16 +125,21 @@ export async function POST(req: Request) {
   }
 }
 
-// AUTH: GET /api/leads — list leads for current org
+// AUTHED: GET /api/leads — list leads for the current org (dashboard)
 export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const org = await getCurrentOrg();
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const clerkUser = await currentUser();
+    const dbUser = await getOrCreateUserByClerkId(userId, {
+      email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+    });
+    const org = await getOwnedOrgForUser(dbUser.id);
     if (!org) return NextResponse.json({ error: "No organization" }, { status: 404 });
 
     const url = new URL(req.url);
-    const status = url.searchParams.get("status"); // 'all' or specific
+    const status = url.searchParams.get("status");
     const temperature = url.searchParams.get("temperature");
 
     const leadRows = await listLeadsForOrg(org.id, {

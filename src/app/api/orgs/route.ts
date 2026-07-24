@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getOrCreateUserByClerkId, getOwnedOrgForUser, hasOwnerMembership } from "@/modules/auth/service";
 import { createOrg, updateOrg } from "@/modules/orgs/service";
-import { getOwnedOrgForUser, hasOwnerMembership } from "@/modules/auth/service";
 import { INDUSTRIES } from "@/lib/constants";
 
 const createSchema = z.object({
@@ -18,8 +18,16 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const clerkUser = await currentUser();
+    const dbUser = await getOrCreateUserByClerkId(userId, {
+      email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+      name: clerkUser?.firstName
+        ? `${clerkUser.firstName} ${clerkUser.lastName ?? ""}`.trim()
+        : clerkUser?.username ?? null,
+    });
 
     const body = await req.json();
     const parsed = createSchema.safeParse(body);
@@ -28,7 +36,7 @@ export async function POST(req: Request) {
     }
     const { name, industry, services, whatsappNumber, ownerPhone, primaryColor } = parsed.data;
 
-    if (await hasOwnerMembership(user.id)) {
+    if (await hasOwnerMembership(dbUser.id)) {
       return NextResponse.json({ error: "You already have an organization." }, { status: 409 });
     }
 
@@ -41,7 +49,7 @@ export async function POST(req: Request) {
       whatsappNumber: whatsappNumber ?? null,
       ownerPhone: ownerPhone ?? null,
       primaryColor: primaryColor ?? "#059669",
-      ownerId: user.id,
+      ownerId: dbUser.id,
     });
 
     return NextResponse.json({
@@ -70,9 +78,14 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const owned = await getOwnedOrgForUser(user.id);
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const clerkUser = await currentUser();
+    const dbUser = await getOrCreateUserByClerkId(userId, {
+      email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+    });
+    const owned = await getOwnedOrgForUser(dbUser.id);
     if (!owned) return NextResponse.json({ error: "No organization" }, { status: 404 });
 
     const body = await req.json();

@@ -1,8 +1,9 @@
 "use client";
-// Lead Machine — single-route SPA view router
+// Lead Machine — single-route SPA view router (Phase 2: Clerk auth signal)
 import { useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useAppStore } from "@/store/app-store";
-import { useSessionHydration } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -49,6 +50,9 @@ export default function Home() {
   const navigate = useAppStore((s) => s.navigate);
   const openPublicSite = useAppStore((s) => s.openPublicSite);
 
+  // Clerk is the source of truth for identity (Phase 2).
+  const { isLoaded, isSignedIn } = useUser();
+
   // URL-based public access: /?site=slug renders that business's public site
   // with NO auth required. This is how prospects visit a client's site.
   useEffect(() => {
@@ -60,47 +64,68 @@ export default function Home() {
     }
   }, [openPublicSite]);
 
-  // Hydrate session once on mount
-  useSessionHydration({
-    setUser: setSession,
-    setLoading: setSessionLoading,
-    user,
-    org,
-  });
+  // When Clerk auth state changes, fetch the bridged org info from our API.
+  // The API uses auth() server-side to identify the Clerk user and bridges
+  // to our users table via getOrCreateUserByClerkId.
+  useEffect(() => {
+    if (!isLoaded) return; // Clerk still loading
+    if (!isSignedIn) {
+      setSession(null, null);
+      return;
+    }
+    // Signed in — fetch org info from our API (which uses Clerk auth()).
+    let cancelled = false;
+    (async () => {
+      try {
+        const { user, org } = await apiClient.me();
+        if (!cancelled) setSession(user, org);
+      } catch {
+        if (!cancelled) setSession(null, null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, setSession]);
 
   // Guard: if trying to view dashboard/onboarding without auth, bounce to landing.
   // NOTE: view === "public" never gets redirected — public sites are open to everyone.
   useEffect(() => {
-    if (sessionLoading) return;
-    if (view === "public") return; // public sites need no auth
-    if (!user && (view === "dashboard" || view === "onboarding")) {
+    if (!isLoaded) return; // wait for Clerk
+    if (view === "public") return;
+    if (!isSignedIn && (view === "dashboard" || view === "onboarding")) {
       navigate("auth");
     }
     // if user is logged in but on landing/auth and has org → go dashboard
-    if (user && org && (view === "landing" || view === "auth")) {
+    if (isSignedIn && user && org && (view === "landing" || view === "auth")) {
       navigate("dashboard");
     }
     // if user logged in, no org, and on landing/auth → go onboarding
-    if (user && !org && view === "landing") {
+    if (isSignedIn && user && !org && (view === "landing" || view === "auth")) {
       navigate("onboarding");
     }
-  }, [user, org, view, sessionLoading, navigate]);
+  }, [isLoaded, isSignedIn, user, org, view, navigate]);
 
   // Loading gate on first paint — but NOT if we're showing a public site
-  // (public sites don't need the session, so show them immediately)
   if (view === "public") return <PublicSiteView />;
 
-  if (sessionLoading) {
+  if (!isLoaded || sessionLoading) {
     return <FullPageSkeleton />;
   }
 
-  if (view === "auth") return <AuthView />;
+  if (view === "auth") {
+    // If already signed in, don't show the auth view — go to onboarding/dashboard
+    if (isSignedIn && user) {
+      return org ? <DashboardView /> : <OnboardingView />;
+    }
+    return <AuthView />;
+  }
   if (view === "onboarding") {
-    if (!user) return <AuthView />;
+    if (!isSignedIn || !user) return <AuthView />;
     return <OnboardingView />;
   }
   if (view === "dashboard") {
-    if (!user) return <AuthView />;
+    if (!isSignedIn || !user) return <AuthView />;
     return <DashboardView />;
   }
 

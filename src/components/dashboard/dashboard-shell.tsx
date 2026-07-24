@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app-store";
 import { apiClient } from "@/lib/api-client";
+import { useClerk } from "@clerk/nextjs";
 import { INDUSTRIES } from "@/lib/constants";
 import type { DashboardTab } from "@/types";
 
@@ -149,6 +150,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
 function UserMenu() {
   const user = useAppStore((s) => s.user);
   const signOutLocal = useAppStore((s) => s.signOutLocal);
+  const { signOut } = useClerk();
 
   const initials = (user?.name || user?.email || "U")
     .split(/[\s@.]+/)
@@ -164,6 +166,8 @@ function UserMenu() {
       /* ignore network errors */
     }
     signOutLocal();
+    // Clerk handles the actual sign-out client-side
+    await signOut({ redirectUrl: "/" });
     toast.success("Signed out");
   }
 

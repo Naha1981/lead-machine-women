@@ -18,10 +18,8 @@ async function api<T = any>(url: string, opts?: RequestInit): Promise<T> {
 }
 
 export const apiClient = {
-  signup: (body: { name?: string; email: string; password: string; businessName?: string; industry?: string }) =>
-    api<{ user: SessionUser }>("/api/auth/signup", { method: "POST", body: JSON.stringify(body) }),
-  signin: (body: { email: string; password: string }) =>
-    api<{ user: SessionUser }>("/api/auth/signin", { method: "POST", body: JSON.stringify(body) }),
+  // Phase 2: auth is handled by Clerk. These server endpoints are kept for
+  // the client store's session hydration (me) and backward-compat (signout).
   signout: () => api<{ ok: boolean }>("/api/auth/signout", { method: "POST" }),
   me: () => api<{ user: SessionUser | null; org: Org | null }>("/api/auth/me"),
 
@@ -60,31 +58,10 @@ export const apiClient = {
   getBilling: () => api<{ subscription: Subscription | null; orgPlan: string; trialEndsAt: string | null }>("/api/billing/subscribe"),
 };
 
-/** Hydrate the session on mount + keep store in sync. */
-export function useSessionHydration(opts: {
-  setUser: (u: SessionUser | null, o: Org | null) => void;
-  setLoading: (v: boolean) => void;
-  user: SessionUser | null;
-  org: Org | null;
-}) {
-  const { setUser, setLoading, user, org } = opts;
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { user, org } = await apiClient.me();
-        if (!cancelled) setUser(user, org);
-      } catch {
-        if (!cancelled) setUser(null, null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-}
+// NOTE: Phase 2 replaced the old useSessionHydration hook with Clerk's useUser().
+// Auth state is now detected client-side via Clerk; the org/tenant info is
+// fetched from /api/auth/me (which uses Clerk auth() server-side) when the
+// Clerk user becomes available.
 
 /** Generic async data fetch hook. */
 export function useAsync<T>(fn: () => Promise<T>, deps: any[]) {
