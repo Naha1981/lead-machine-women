@@ -11,7 +11,7 @@ export async function GET() {
       publishableKey: Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY),
       secretKey: Boolean(process.env.CLERK_SECRET_KEY),
     },
-    ai: Boolean(process.env.OPENAI_API_KEY), // Phase 4 (Vercel AI SDK) — currently z-ai-web-dev-sdk
+    ai: Boolean(process.env.OPENAI_API_KEY), // Vercel AI SDK (Phase 4) — OpenAI by default
     whatsapp: {
       evolutionApiUrl: Boolean(process.env.EVOLUTION_API_URL),
       evolutionApiKey: Boolean(process.env.EVOLUTION_API_KEY),

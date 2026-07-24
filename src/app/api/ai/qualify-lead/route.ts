@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
 import { getLeadForOrg, setLeadQualification } from "@/modules/leads/service";
-import { qualifyLead } from "@/lib/ai";
+import { qualifyLead, AINotConfiguredError } from "@/lib/ai";
 
 const schema = z.object({
   leadId: z.string().min(2).max(60),
@@ -58,6 +58,12 @@ export async function POST(req: Request) {
       qualification: q,
     });
   } catch (e: any) {
+    if (e instanceof AINotConfiguredError) {
+      return NextResponse.json(
+        { error: { code: "AI_NOT_CONFIGURED", message: e.message } },
+        { status: 503 }
+      );
+    }
     console.error("[re-qualify]", e);
     return NextResponse.json({ error: e?.message ?? "Server error" }, { status: 500 });
   }

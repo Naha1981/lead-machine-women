@@ -49,8 +49,22 @@ export const apiClient = {
 
   reQualify: (leadId: string) =>
     api<{ lead: Lead; qualification: any }>("/api/ai/qualify-lead", { method: "POST", body: JSON.stringify({ leadId }) }),
-  chat: (body: { slug: string; message: string; history?: { role: "user" | "assistant"; content: string }[] }) =>
-    api<{ reply: string }>("/api/ai/chat", { method: "POST", body: JSON.stringify(body) }),
+  chat: async (body: { slug: string; message: string; history?: { role: "user" | "assistant"; content: string }[] }): Promise<{ reply: string }> => {
+    const res = await fetch("/api/ai/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const msg = (data as any)?.error?.message ?? (data as any)?.error ?? `Chat failed (${res.status})`;
+      throw new Error(typeof msg === "string" ? msg : "Chat unavailable");
+    }
+    // The chat endpoint now returns a text stream (Vercel AI SDK toTextStreamResponse).
+    // Read it as text for the full reply.
+    const reply = await res.text();
+    return { reply };
+  },
 
   getWhatsappMessages: () => api<{ messages: WhatsAppMessage[] }>("/api/whatsapp/messages"),
   subscribe: (plan: "starter" | "growth" | "agency") =>

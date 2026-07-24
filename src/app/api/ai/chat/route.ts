@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOrgBySlug } from "@/modules/orgs/service";
 import { getWebsiteForOrg } from "@/modules/websites/service";
-import { chatReply } from "@/lib/ai";
+import { streamChatReply, AINotConfiguredError } from "@/lib/ai";
 import type { WebsiteFaq } from "@/modules/websites/service";
 
 const schema = z.object({
@@ -27,17 +26,19 @@ export async function POST(req: Request) {
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+      return Response.json({ error: "Invalid input" }, { status: 400 });
     }
     const { slug, message, history } = parsed.data;
 
     const org = await getOrgBySlug(slug);
-    if (!org) return NextResponse.json({ error: "Business not found" }, { status: 404 });
+    if (!org) return Response.json({ error: "Business not found" }, { status: 404 });
 
     const website = await getWebsiteForOrg(org.id);
     const faq: WebsiteFaq[] = (website?.faq as WebsiteFaq[] | null) ?? [];
 
-    const reply = await chatReply({
+    // streamChatReply returns a streaming text Response. If AI is not
+    // configured, it throws AINotConfiguredError (caught below).
+    return await streamChatReply({
       businessName: org.name,
       industry: org.industry,
       services: org.services ?? "",
@@ -45,10 +46,17 @@ export async function POST(req: Request) {
       message,
       history,
     });
-
-    return NextResponse.json({ reply });
   } catch (e: any) {
+    if (e instanceof AINotConfiguredError) {
+      return Response.json(
+        { error: { code: "AI_NOT_CONFIGURED", message: e.message } },
+        { status: 503 }
+      );
+    }
     console.error("[ai chat]", e);
-    return NextResponse.json({ error: e?.message ?? "Server error" }, { status: 500 });
+    return Response.json(
+      { error: e?.message ?? "Server error" },
+      { status: 500 }
+    );
   }
 }

@@ -7,6 +7,7 @@
 //   /s/(.*)                    (public generated sites — the sellable URL)
 //   /login                     (Clerk sign-in, path routing)
 //   /signup                    (Clerk sign-up, path routing)
+//   /api/ai/chat               (public chat widget on /s/[slug] — NO auth)
 //   /api/leads                 (POST = visitor lead submit, NO auth; GET checks auth() internally)
 //   /api/website/public(.*)    (public generated site data)
 //   /api/auth/me               (returns { user: null } for unauthed — client needs JSON, not a redirect)
@@ -20,7 +21,8 @@
 //   /onboarding(.*)            (Phase 3b — forward-compatible)
 //   /settings(.*)              (Phase 3b — forward-compatible)
 //   /api/orgs(.*)
-//   /api/ai(.*)
+//   /api/ai/generate-website   (dashboard — AI website generation)
+//   /api/ai/qualify-lead       (dashboard — re-qualify a lead)
 //   /api/billing(.*)
 //   /api/website/publish
 //   /api/website/get
@@ -33,7 +35,10 @@ const isProtectedRoute = createRouteMatcher([
   "/onboarding(.*)",
   "/settings(.*)",
   "/api/orgs(.*)",
-  "/api/ai(.*)",
+  // /api/ai/chat is PUBLIC (used by the chat widget on public /s/[slug] sites
+  // — visitors chat with NO auth). Only generate-website + qualify-lead are protected.
+  "/api/ai/generate-website",
+  "/api/ai/qualify-lead",
   "/api/billing(.*)",
   "/api/website/publish",
   "/api/website/get",

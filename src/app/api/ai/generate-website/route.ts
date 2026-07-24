@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
-import { generateWebsiteContent } from "@/lib/ai";
+import { generateWebsiteContent, AINotConfiguredError } from "@/lib/ai";
 import { saveGeneratedWebsite } from "@/modules/websites/service";
 
 const schema = z.object({
@@ -67,6 +67,12 @@ export async function POST(req: Request) {
       },
     });
   } catch (e: any) {
+    if (e instanceof AINotConfiguredError) {
+      return NextResponse.json(
+        { error: { code: "AI_NOT_CONFIGURED", message: e.message } },
+        { status: 503 }
+      );
+    }
     console.error("[generate-website]", e);
     return NextResponse.json({ error: e?.message ?? "Server error" }, { status: 500 });
   }
