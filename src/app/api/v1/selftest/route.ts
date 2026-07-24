@@ -14,7 +14,7 @@ export async function GET() {
     ai: Boolean(process.env.OPENAI_API_KEY), // Vercel AI SDK (Phase 4) — OpenAI by default
     whatsapp: {
       evolutionApiUrl: Boolean(process.env.EVOLUTION_API_URL),
-      evolutionApiKey: Boolean(process.env.EVOLUTION_API_KEY),
+      evolutionApiKey: Boolean(process.env.EVOLUTION_GLOBAL_API_KEY),
       simulate: process.env.SIMULATE_WHATSAPP !== "false", // defaults to true
     },
     billing: {
