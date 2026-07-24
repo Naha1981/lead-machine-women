@@ -1,0 +1,1648 @@
+     1→build me this application: # 🚀 Lead Machine — Full PRD + Build Prompts
+     2→
+     3→---
+     4→
+     5→## 📊 Accountability Snapshot
+     6→
+     7→| Item | Status |
+     8→|------|--------|
+     9→| **Current Product** | Lead Machine (PRD-001) |
+    10→| **Current Milestone** | Phase 0: Monorepo Scaffold |
+    11→| **Current Prospect** | 310 contacts (first 10 named) |
+    12→| **Current Revenue** | R0 |
+    13→| **Revenue Goal (Month 1)** | R49,990 (10 clients) |
+    14→| **Current Blocker** | No code written yet |
+    15→| **Next Task** | Paste Phase 0 prompt into Cursor ⬇️ |
+    16→
+    17→---
+    18→
+    19→# PART 1: PRODUCT REQUIREMENTS DOCUMENT
+    20→
+    21→## 1.1 Product Vision
+    22→
+    23→**Lead Machine** is an AI-powered lead generation platform that gives every South African SME a professional website with an intelligent lead capture system. When a visitor fills the form, AI qualifies the lead instantly, sends a WhatsApp confirmation to the prospect, notifies the business owner, and logs everything in a simple dashboard.
+    24→
+    25→**One sentence:** *Your business gets a website that turns visitors into paying clients while you sleep.*
+    26→
+    27→---
+    28→
+    29→## 1.2 Problem Statement
+    30→
+    31→South African SMEs (law firms, consultants, coaches, recruiters, wellness brands) lose 70-80% of potential clients because:
+    32→
+    33→1. They have no website or an outdated one
+    34→2. They respond to enquiries 24-48 hours later (or never)
+    35→3. They can't qualify leads — every enquiry gets the same treatment
+    36→4. They have no CRM — leads live in WhatsApp chats and memory
+    37→5. They can't afford a developer (R50K+) or a marketing agency (R15K/month)
+    38→
+    39→**Lead Machine solves all 5 problems for R4,999/month.**
+    40→
+    41→---
+    42→
+    43→## 1.3 Target Users
+    44→
+    45→| Segment | Size | Pain | Willingness to Pay |
+    46→|---------|------|------|-------------------|
+    47→| Law firms (1-5 attorneys) | ~5,000 in SA | Need clients, hate marketing | High (R5K/mo is nothing vs. one case fee) |
+    48→| HR consultants / recruiters | ~3,000 in SA | Need candidates + corporate clients | High |
+    49→| Business coaches / trainers | ~8,000 in SA | Need bookings, live on WhatsApp | Medium-High |
+    50→| Wellness / fitness brands | ~4,000 in SA | Need class bookings, community | Medium |
+    51→| Accounting / tax practices | ~6,000 in SA | Need SME clients, seasonal rush | High |
+    52→| Corporate secretarial / compliance | ~2,000 in SA | Need retainer clients | High |
+    53→| Construction / QS firms | ~3,000 in SA | Need tender leads | High |
+    54→| Insurance brokers | ~4,000 in SA | Need policy leads | High |
+    55→
+    56→**Total addressable market in database: 310 contacts. Total addressable market in SA: ~35,000 SMEs.**
+    57→
+    58→---
+    59→
+    60→## 1.4 User Personas
+    61→
+    62→### Persona 1: Nonkosi — The Attorney
+    63→- **Age:** 38
+    64→- **Business:** MVR Law (2 attorneys, 1 secretary)
+    65→- **Tech level:** Low. Uses WhatsApp + Gmail + Word.
+    66→- **Pain:** Gets 3-5 enquiries/month from Google. Loses 2 because she replies too late.
+    67→- **Goal:** "I want enquiries to come in and someone to respond immediately."
+    68→- **Budget:** R5,000/month is easy. One case pays for 6 months.
+    69→- **Objection:** "I don't have time to learn new software."
+    70→
+    71→### Persona 2: Ruth — The Coach
+    72→- **Age:** 42
+    73→- **Business:** ShePowHer (coaching platform, 30K+ community)
+    74→- **Tech level:** Medium. Uses WhatsApp Business, Instagram, Mailchimp.
+    75→- **Pain:** 200 DMs/week. Can't respond to all. Loses paid workshop signups.
+    76→- **Goal:** "I want an AI that answers common questions and books people into my calendar."
+    77→- **Budget:** R5,000/month. She already spends R3K on a VA.
+    78→- **Objection:** "Will it sound like me? My brand is personal."
+    79→
+    80→### Persona 3: Sandi — The QS Director
+    81→- **Age:** 45
+    82→- **Business:** Azzaro QS / SVA International (6 staff)
+    83→- **Tech level:** Medium. Uses Excel, email, CIDB portal.
+    84→- **Pain:** Misses tender deadlines. Needs qualified construction leads.
+    85→- **Goal:** "I want a website that positions me as the go-to QS firm and captures tender enquiries."
+    86→- **Budget:** R5,000/month is trivial vs. a R2M tender.
+    87→- **Objection:** "Will it understand construction industry language?"
+    88→
+    89→---
+    90→
+    91→## 1.5 User Stories
+    92→
+    93→### Epic 1: Onboarding
+    94→| ID | Story | Priority |
+    95→|----|-------|----------|
+    96→| US-1.1 | As a business owner, I want to sign up in under 3 minutes so I can start getting leads today. | P0 |
+    97→| US-1.2 | As a business owner, I want to enter my business name, industry, and services so the AI can generate my website. | P0 |
+    98→| US-1.3 | As a business owner, I want to connect my WhatsApp number so leads notify me instantly. | P0 |
+    99→| US-1.4 | As a business owner, I want to choose a template (legal, consulting, wellness, construction) so my site looks professional. | P0 |
+   100→| US-1.5 | As a business owner, I want to preview my generated website before publishing. | P1 |
+   101→
+   102→### Epic 2: Lead Capture
+   103→| ID | Story | Priority |
+   104→|----|-------|----------|
+   105→| US-2.1 | As a visitor, I want to fill a simple form (name, phone, what I need) so I can get a response fast. | P0 |
+   106→| US-2.2 | As a visitor, I want to receive a WhatsApp confirmation within 10 seconds so I know my enquiry was received. | P0 |
+   107→| US-2.3 | As a business owner, I want to receive a WhatsApp notification with the lead details within 10 seconds. | P0 |
+   108→| US-2.4 | As a business owner, I want the AI to score each lead (hot/warm/cold) so I know who to call first. | P0 |
+   109→| US-2.5 | As a business owner, I want the AI to ask qualifying questions via WhatsApp if the form is incomplete. | P1 |
+   110→
+   111→### Epic 3: Dashboard
+   112→| ID | Story | Priority |
+   113→|----|-------|----------|
+   114→| US-3.1 | As a business owner, I want to see all my leads in one list with status (new, contacted, won, lost). | P0 |
+   115→| US-3.2 | As a business owner, I want to see how many leads I got this week/month. | P0 |
+   116→| US-3.3 | As a business owner, I want to see conversion rate (leads → clients). | P1 |
+   117→| US-3.4 | As a business owner, I want to export leads to Excel/CSV. | P1 |
+   118→
+   119→### Epic 4: AI Agent
+   120→| ID | Story | Priority |
+   121→|----|-------|----------|
+   122→| US-4.1 | As a business owner, I want the AI to answer common questions about my business on the website. | P1 |
+   123→| US-4.2 | As a business owner, I want the AI to sound like my brand (tone, language, industry terms). | P1 |
+   124→| US-4.3 | As a business owner, I want to train the AI with my FAQ, services, and pricing. | P2 |
+   125→
+   126→### Epic 5: Billing
+   127→| ID | Story | Priority |
+   128→|----|-------|----------|
+   129→| US-5.1 | As a business owner, I want to pay R4,999/month via debit order or card. | P0 |
+   130→| US-5.2 | As a business owner, I want a 7-day free trial so I can see it working before paying. | P0 |
+   131→| US-5.3 | As a business owner, I want to cancel anytime without penalty. | P0 |
+   132→
+   133→---
+   134→
+   135→## 1.6 Functional Requirements
+   136→
+   137→| ID | Requirement | Priority |
+   138→|----|-------------|----------|
+   139→| FR-01 | Multi-tenant architecture (each business is an isolated org) | P0 |
+   140→| FR-02 | Clerk authentication (email + Google OAuth) | P0 |
+   141→| FR-03 | Organization creation with business profile (name, industry, services, logo, colours) | P0 |
+   142→| FR-04 | AI website generation from business profile (3 industry templates) | P0 |
+   143→| FR-05 | Dynamic lead capture form (name, phone, email, service needed, message) | P0 |
+   144→| FR-06 | AI lead qualification (score 1-10, hot/warm/cold, reason) | P0 |
+   145→| FR-07 | WhatsApp confirmation to prospect (via Evolution API) | P0 |
+   146→| FR-08 | WhatsApp notification to business owner (via Evolution API) | P0 |
+   147→| FR-09 | Lead dashboard (list view, pipeline stages, filters) | P0 |
+   148→| FR-10 | Lead status management (new → contacted → qualified → won/lost) | P0 |
+   149→| FR-11 | Paystack subscription billing (R4,999/month, 7-day trial) | P0 |
+   150→| FR-12 | Custom domain support (client's own domain) | P1 |
+   151→| FR-13 | AI chatbot on website (answers FAQs, captures leads conversationally) | P1 |
+   152→| FR-14 | Email notifications (daily lead summary) | P1 |
+   153→| FR-15 | CSV/Excel export | P1 |
+   154→| FR-16 | Analytics (leads/week, conversion rate, source tracking) | P1 |
+   155→| FR-17 | WhatsApp follow-up sequences (auto-remind unresponsive leads) | P2 |
+   156→| FR-18 | AI knowledge base (upload docs, AI answers from them) | P2 |
+   157→| FR-19 | Multi-language support (English, Zulu, Afrikaans) | P2 |
+   158→| FR-20 | White-label (agency mode — manage multiple client sites) | P3 |
+   159→
+   160→---
+   161→
+   162→## 1.7 Non-Functional Requirements
+   163→
+   164→| ID | Requirement | Target |
+   165→|----|-------------|--------|
+   166→| NFR-01 | Page load time | < 2 seconds |
+   167→| NFR-02 | WhatsApp delivery time | < 10 seconds from form submit |
+   168→| NFR-03 | AI qualification time | < 5 seconds |
+   169→| NFR-04 | Uptime | 99.5% |
+   170→| NFR-05 | Data residency | South Africa (Neon PostgreSQL — choose nearest region) |
+   171→| NFR-06 | POPIA compliance | Consent checkbox on form, data deletion on request, privacy policy |
+   172→| NFR-07 | Mobile responsive | All pages work on mobile (80% of SA traffic is mobile) |
+   173→| NFR-08 | Scalability | Support 1,000 tenants without architecture change |
+   174→| NFR-09 | Security | HTTPS, rate limiting, input sanitization, Clerk session management |
+   175→| NFR-10 | Backup | Neon automated daily backups |
+   176→
+   177→---
+   178→
+   179→## 1.8 Technical Architecture
+   180→
+   181→```
+   182→┌─────────────────────────────────────────────────────────────────┐
+   183→│                        VERCEL (Deployment)                        │
+   184→│                                                                   │
+   185→│  ┌─────────────────────────────────────────────────────────────┐ │
+   186→│  │              Next.js App Router (apps/web)                    │ │
+   187→│  │                                                               │ │
+   188→│  │  /                    → Marketing landing page                │ │
+   189→│  │  /login               → Clerk auth                            │ │
+   190→│  │  /dashboard           → App shell (sidebar + header)          │ │
+   191→│  │  /dashboard/leads     → Lead list + pipeline                  │ │
+   192→│  │  /dashboard/website   → Website builder / preview             │ │
+   193→│  │  /dashboard/settings  → Org settings, WhatsApp connect        │ │
+   194→│  │  /dashboard/billing   → Paystack subscription                 │ │
+   195→│  │  /s/[slug]            → Client's generated website (public)   │ │
+   196→│  │  /api/leads           → Lead CRUD + AI qualification          │ │
+   197→│  │  /api/whatsapp        → Evolution API webhook handler         │ │
+   198→│  │  /api/ai              → Vercel AI SDK streaming endpoint      │ │
+   199→│  │  /api/billing         → Paystack webhook handler              │ │
+   200→│  └─────────────────────────────────────────────────────────────┘ │
+   201→│                                                                   │
+   202→│  ┌─────────────────────────────────────────────────────────────┐ │
+   203→│  │              Render Workers (Background Jobs)                  │ │
+   204→│  │                                                               │ │
+   205→│  │  whatsapp-worker      → Process inbound WhatsApp messages     │ │
+   206→│  │  notification-worker  → Send daily email summaries            │ │
+   207→│  └─────────────────────────────────────────────────────────────┘ │
+   208→└─────────────────────────────────────────────────────────────────┘
+   209→         │                    │                    │
+   210→         ▼                    ▼                    ▼
+   211→┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+   212→│  Neon        │    │  Evolution   │    │  Paystack    │
+   213→│  PostgreSQL  │    │  API         │    │  (Billing)   │
+   214→│  + pgvector  │    │  (WhatsApp)  │    │              │
+   215→│  (Drizzle)   │    │  (Render)    │    │              │
+   216→└──────────────┘    └──────────────┘    └──────────────┘
+   217→         │
+   218→         ▼
+   219→┌──────────────┐
+   220→│  Clerk       │
+   221→│  (Auth)      │
+   222→└──────────────┘
+   223→```
+   224→
+   225→---
+   226→
+   227→## 1.9 Database Design (Drizzle Schema)
+   228→
+   229→```typescript
+   230→// packages/db/schema/organizations.ts
+   231→export const organizations = pgTable('organizations', {
+   232→  id: uuid('id').primaryKey().defaultRandom(),
+   233→  name: varchar('name', { length: 255 }).notNull(),
+   234→  slug: varchar('slug', { length: 100 }).unique().notNull(),
+   235→  industry: varchar('industry', { length: 100 }).notNull(),
+   236→  services: text('services'),                    // comma-separated
+   237→  logoUrl: varchar('logo_url', { length: 500 }),
+   238→  primaryColor: varchar('primary_color', { length: 7 }).default('#2563eb'),
+   239→  whatsappNumber: varchar('whatsapp_number', { length: 20 }),
+   240→  whatsappConnected: boolean('whatsapp_connected').default(false),
+   241→  evolutionInstanceId: varchar('evolution_instance_id', { length: 100 }),
+   242→  plan: varchar('plan', { length: 50 }).default('trial'),
+   243→  trialEndsAt: timestamp('trial_ends_at'),
+   244→  createdAt: timestamp('created_at').defaultNow(),
+   245→  updatedAt: timestamp('updated_at').defaultNow(),
+   246→});
+   247→
+   248→// packages/db/schema/leads.ts
+   249→export const leads = pgTable('leads', {
+   250→  id: uuid('id').primaryKey().defaultRandom(),
+   251→  orgId: uuid('org_id').references(() => organizations.id).notNull(),
+   252→  name: varchar('name', { length: 255 }).notNull(),
+   253→  phone: varchar('phone', { length: 20 }).notNull(),
+   254→  email: varchar('email', { length: 255 }),
+   255→  serviceNeeded: varchar('service_needed', { length: 255 }),
+   256→  message: text('message'),
+   257→  source: varchar('source', { length: 50 }).default('website'),
+   258→  aiScore: integer('ai_score'),                 // 1-10
+   259→  aiTemperature: varchar('ai_temperature', { length: 10 }), // hot/warm/cold
+   260→  aiReason: text('ai_reason'),
+   261→  status: varchar('status', { length: 20 }).default('new'), // new/contacted/qualified/won/lost
+   262→  whatsappSent: boolean('whatsapp_sent').default(false),
+   263→  ownerNotified: boolean('owner_notified').default(false),
+   264→  consentGiven: boolean('consent_given').default(false),   // POPIA
+   265→  createdAt: timestamp('created_at').defaultNow(),
+   266→  updatedAt: timestamp('updated_at').defaultNow(),
+   267→});
+   268→
+   269→// packages/db/schema/websites.ts
+   270→export const websites = pgTable('websites', {
+   271→  id: uuid('id').primaryKey().defaultRandom(),
+   272→  orgId: uuid('org_id').references(() => organizations.id).notNull(),
+   273→  template: varchar('template', { length: 50 }).notNull(),  // legal/consulting/wellness/construction/general
+   274→  heroHeadline: text('hero_headline'),
+   275→  heroSubtext: text('hero_subtext'),
+   276→  aboutText: text('about_text'),
+   277→  services: jsonb('services'),                  // [{name, description}]
+   278→  faq: jsonb('faq'),                            // [{question, answer}]
+   279→  customDomain: varchar('custom_domain', { length: 255 }),
+   280→  published: boolean('published').default(false),
+   281→  createdAt: timestamp('created_at').defaultNow(),
+   282→  updatedAt: timestamp('updated_at').defaultNow(),
+   283→});
+   284→
+   285→// packages/db/schema/whatsapp-messages.ts
+   286→export const whatsappMessages = pgTable('whatsapp_messages', {
+   287→  id: uuid('id').primaryKey().defaultRandom(),
+   288→  orgId: uuid('org_id').references(() => organizations.id).notNull(),
+   289→  leadId: uuid('lead_id').references(() => leads.id),
+   290→  direction: varchar('direction', { length: 10 }).notNull(), // inbound/outbound
+   291→  phoneNumber: varchar('phone_number', { length: 20 }).notNull(),
+   292→  content: text('content').notNull(),
+   293→  messageType: varchar('message_type', { length: 20 }).default('text'),
+   294→  status: varchar('status', { length: 20 }).default('pending'), // pending/sent/delivered/read/failed
+   295→  evolutionMessageId: varchar('evolution_message_id', { length: 100 }),
+   296→  createdAt: timestamp('created_at').defaultNow(),
+   297→});
+   298→
+   299→// packages/db/schema/subscriptions.ts
+   300→export const subscriptions = pgTable('subscriptions', {
+   301→  id: uuid('id').primaryKey().defaultRandom(),
+   302→  orgId: uuid('org_id').references(() => organizations.id).notNull(),
+   303→  paystackCustomerId: varchar('paystack_customer_id', { length: 100 }),
+   304→  paystackSubscriptionId: varchar('paystack_subscription_id', { length: 100 }),
+   305→  plan: varchar('plan', { length: 50 }).default('starter'),
+   306→  amountZar: integer('amount_zar').default(499900), // R4,999.00 in cents
+   307→  status: varchar('status', { length: 20 }).default('trial'), // trial/active/past_due/cancelled
+   308→  currentPeriodStart: timestamp('current_period_start'),
+   309→  currentPeriodEnd: timestamp('current_period_end'),
+   310→  cancelledAt: timestamp('cancelled_at'),
+   311→  createdAt: timestamp('created_at').defaultNow(),
+   312→});
+   313→```
+   314→
+   315→---
+   316→
+   317→## 1.10 API Design
+   318→
+   319→| Method | Endpoint | Description | Auth |
+   320→|--------|----------|-------------|------|
+   321→| POST | `/api/orgs` | Create organization | Clerk |
+   322→| GET | `/api/orgs/[orgId]` | Get org details | Clerk |
+   323→| PUT | `/api/orgs/[orgId]` | Update org profile | Clerk |
+   324→| POST | `/api/orgs/[orgId]/website/generate` | AI generates website content | Clerk |
+   325→| GET | `/api/orgs/[orgId]/website` | Get website config | Clerk |
+   326→| PUT | `/api/orgs/[orgId]/website` | Update website | Clerk |
+   327→| POST | `/api/orgs/[orgId]/website/publish` | Publish website | Clerk |
+   328→| GET | `/api/s/[slug]` | Public: get published website | None |
+   329→| POST | `/api/s/[slug]/leads` | Public: submit lead form | None (rate limited) |
+   330→| GET | `/api/orgs/[orgId]/leads` | List leads (paginated) | Clerk |
+   331→| GET | `/api/orgs/[orgId]/leads/[leadId]` | Get lead detail | Clerk |
+   332→| PUT | `/api/orgs/[orgId]/leads/[leadId]` | Update lead status | Clerk |
+   333→| GET | `/api/orgs/[orgId]/leads/export` | Export CSV | Clerk |
+   334→| POST | `/api/whatsapp/webhook` | Evolution API inbound webhook | HMAC verify |
+   335→| POST | `/api/whatsapp/connect` | Connect WhatsApp (QR flow) | Clerk |
+   336→| GET | `/api/whatsapp/status` | Check connection status | Clerk |
+   337→| POST | `/api/billing/subscribe` | Create Paystack subscription | Clerk |
+   338→| POST | `/api/billing/webhook` | Paystack webhook handler | HMAC verify |
+   339→| GET | `/api/billing/status` | Get subscription status | Clerk |
+   340→| POST | `/api/ai/qualify-lead` | AI scores a lead | Internal |
+   341→| POST | `/api/ai/chat` | AI chatbot (streaming) | Public (rate limited) |
+   342→
+   343→---
+   344→
+   345→## 1.11 AI Components
+   346→
+   347→| Component | Model | Purpose | Prompt Strategy |
+   348→|-----------|-------|---------|-----------------|
+   349→| **Website Generator** | GPT-4o / Claude | Generate headline, about, services, FAQ from business profile | System prompt: "You are a conversion copywriter for SA SMEs..." |
+   350→| **Lead Qualifier** | GPT-4o-mini / Claude Haiku | Score lead 1-10, classify hot/warm/cold, give reason | Structured output (Zod schema): {score, temperature, reason, suggestedAction} |
+   351→| **WhatsApp Responder** | GPT-4o-mini | Reply to inbound WhatsApp messages using business FAQ | RAG from business FAQ + services. Tone matches brand. |
+   352→| **Chat Widget** | GPT-4o-mini (streaming) | Answer visitor questions on website, guide to form | System prompt with business context. CTA: "Fill the form and we'll WhatsApp you." |
+   353→
+   354→---
+   355→
+   356→## 1.12 Screens (Text Wireframes)
+   357→
+   358→### Screen 1: Marketing Landing Page (`/`)
+   359→```
+   360→┌─────────────────────────────────────────────────┐
+   361→│  [Logo: Lead Machine by NhahaLabs]    [Login]   │
+   362→├─────────────────────────────────────────────────┤
+   363→│                                                  │
+   364→│   "Get 10+ Qualified Leads Per Month            │
+   365→│    On Autopilot. Guaranteed."                    │
+   366→│                                                  │
+   367→│   Your business gets a professional website     │
+   368→│   + AI that captures, qualifies, and            │
+   369→│   WhatsApp-notifies you in 10 seconds.          │
+   370→│                                                  │
+   371→│   [Start Free Trial →]    [Watch Demo ▶]        │
+   372→│                                                  │
+   373→│   ✓ No coding needed                            │
+   374→│   ✓ Live in 5 minutes                           │
+   375→│   ✓ R4,999/month — cancel anytime              │
+   376→│                                                  │
+   377→├─────────────────────────────────────────────────┤
+   378→│  HOW IT WORKS (3 steps)                         │
+   379→│  1. Tell us about your business                 │
+   380→│  2. AI builds your website                      │
+   381→│  3. Leads flow in via WhatsApp                  │
+   382→├─────────────────────────────────────────────────┤
+   383→│  PRICING                                        │
+   384→│  Starter: R4,999/mo (1 site, 100 leads/mo)     │
+   385→│  Growth: R9,999/mo (3 sites, unlimited leads)   │
+   386→│  Agency: R24,999/mo (10 sites, white-label)     │
+   387→├─────────────────────────────────────────────────┤
+   388→│  [Footer: Privacy Policy | Terms | POPIA]       │
+   389→└─────────────────────────────────────────────────┘
+   390→```
+   391→
+   392→### Screen 2: Onboarding (`/dashboard/onboarding`)
+   393→```
+   394→┌─────────────────────────────────────────────────┐
+   395→│  [Sidebar]  │  Step 1 of 4: Your Business       │
+   396→│             │                                    │
+   397→│  Dashboard  │  Business Name: [____________]     │
+   398→│  Leads      │  Industry: [▼ Legal/Consulting/   │
+   399→│  Website    │           Wellness/Construction/   │
+   400→│  Settings   │           Other]                   │
+   401→│  Billing    │  Services: [____________]          │
+   402→│             │  WhatsApp: [+27 ___________]       │
+   403→│             │                                    │
+   404→│             │  [Next →]                          │
+   405→└─────────────────────────────────────────────────┘
+   406→```
+   407→
+   408→### Screen 3: Lead Dashboard (`/dashboard/leads`)
+   409→```
+   410→┌─────────────────────────────────────────────────┐
+   411→│  [Sidebar]  │  Leads (23 this month)            │
+   412→│             │                                    │
+   413→│             │  [All] [New] [Hot] [Won] [Lost]   │
+   414→│             │                                    │
+   415→│             │  ┌─────────────────────────────┐   │
+   416→│             │  │ 🔥 Thabo M. | 082 345 6789 │   │
+   417→│             │  │ "Need contract review"      │   │
+   418→│             │  │ Score: 9/10 | HOT           │   │
+   419→│             │  │ Status: [New ▼]             │   │
+   420→│             │  │ WhatsApp: ✓ Sent 2min ago   │   │
+   421→│             │  └─────────────────────────────┘   │
+   422→│             │  ┌─────────────────────────────┐   │
+   423→│             │  │ ⚡ Lerato K. | 071 234 5678│   │
+   424→│             │  │ "Looking for tax consultant"│   │
+   425→│             │  │ Score: 7/10 | WARM          │   │
+   426→│             │  │ Status: [Contacted ▼]       │   │
+   427→│             │  └─────────────────────────────┘   │
+   428→│             │                                    │
+   429→│             │  [Export CSV]                      │
+   430→└─────────────────────────────────────────────────┘
+   431→```
+   432→
+   433→### Screen 4: Client's Generated Website (`/s/[slug]`)
+   434→```
+   435→┌─────────────────────────────────────────────────┐
+   436→│  [Business Logo]     [Services] [About] [Contact]│
+   437→├─────────────────────────────────────────────────┤
+   438→│                                                  │
+   439→│   "MVR Law — Trusted Legal Partners             │
+   440→│    in Johannesburg"                              │
+   441→│                                                  │
+   442→│   We help businesses and individuals with       │
+   443→│   contracts, disputes, and compliance.          │
+   444→│                                                  │
+   445→│   [Get a Free Consultation →]                   │
+   446→│                                                  │
+   447→├─────────────────────────────────────────────────┤
+   448→│  OUR SERVICES                                    │
+   449→│  • Contract Law  • Labour Law  • Compliance     │
+   450→├─────────────────────────────────────────────────┤
+   451→│  GET IN TOUCH                                    │
+   452→│  Name: [____________]                            │
+   453→│  Phone: [____________]                           │
+   454→│  What do you need help with? [____________]      │
+   455→│  ☐ I consent to being contacted (POPIA)         │
+   456→│  [Submit →]                                      │
+   457→├─────────────────────────────────────────────────┤
+   458→│  💬 Chat with us [AI Chat Widget]               │
+   459→└─────────────────────────────────────────────────┘
+   460→```
+   461→
+   462→---
+   463→
+   464→## 1.13 User Flows
+   465→
+   466→### Flow 1: Business Owner Signs Up
+   467→```
+   468→Sign Up (Clerk) → Create Org → Enter Business Details → Connect WhatsApp (QR scan)
+   469→→ AI Generates Website → Preview → Publish → Share Link → Start Getting Leads
+   470→```
+   471→
+   472→### Flow 2: Visitor Becomes a Lead
+   473→```
+   474→Visitor lands on /s/[slug] → Fills form → Submits
+   475→→ API receives → AI qualifies (score + temperature) → Saves to DB
+   476→→ WhatsApp confirmation sent to visitor ("Thanks! MVR Law will call you within 2 hours.")
+   477→→ WhatsApp notification sent to owner ("🔥 NEW LEAD: Thabo M. | Score 9/10 | Contract review")
+   478→→ Lead appears in dashboard
+   479→```
+   480→
+   481→### Flow 3: Owner Manages Leads
+   482→```
+   483→Owner opens dashboard → Sees leads sorted by score → Clicks "Hot" filter
+   484→→ Calls top lead → Updates status to "Contacted" → Eventually marks "Won"
+   485→→ Dashboard shows conversion metrics
+   486→```
+   487→
+   488→---
+   489→
+   490→## 1.14 MVP Scope (What We Build in 3 Weeks)
+   491→
+   492→### IN SCOPE (MVP):
+   493→- ✅ Clerk auth + org creation
+   494→- ✅ Business profile form (name, industry, services, WhatsApp)
+   495→- ✅ AI website generation (1 template: "Professional Services")
+   496→- ✅ Lead capture form on generated website
+   497→- ✅ AI lead qualification (score + temperature)
+   498→- ✅ WhatsApp confirmation to prospect
+   499→- ✅ WhatsApp notification to owner
+   500→- ✅ Lead dashboard (list, filter by status, update status)
+   501→- ✅ Paystack billing (R4,999/month, 7-day trial)
+   502→- ✅ POPIA consent checkbox
+   503→- ✅ Mobile responsive
+   504→- ✅ Basic analytics (leads this week/month)
+   505→
+   506→### OUT OF SCOPE (Version 2+):
+   507→- ❌ Multiple templates (V2)
+   508→- ❌ AI chatbot on website (V2)
+   509→- ❌ Custom domains (V2)
+   510→- ❌ WhatsApp follow-up sequences (V2)
+   511→- ❌ Email notifications (V2)
+   512→- ❌ CSV export (V2)
+   513→- ❌ Multi-language (V3)
+   514→- ❌ White-label / Agency mode (V3)
+   515→- ❌ AI knowledge base / RAG (V3)
+   516→
+   517→---
+   518→
+   519→## 1.15 Version Roadmap
+   520→
+   521→| Version | Timeline | Features | Revenue Impact |
+   522→|---------|----------|----------|----------------|
+   523→| **MVP (v1.0)** | Week 1-3 | Core: site gen + form + WhatsApp + dashboard + billing | R4,999/client/mo |
+   524→| **v1.1** | Week 4-5 | 3 templates (legal, consulting, wellness) + CSV export | Reduces churn |
+   525→| **v1.2** | Week 6-7 | AI chatbot on website + email daily summary | Upsell to R7,999 |
+   526→| **v2.0** | Week 8-12 | Custom domains + WhatsApp sequences + analytics dashboard | Upsell to R9,999 |
+   527→| **v3.0** | Month 4-6 | Agency mode (white-label) + multi-language + RAG knowledge base | R24,999/agency/mo |
+   528→
+   529→---
+   530→
+   531→## 1.16 Pricing
+   532→
+   533→| Plan | Price | Includes | Target |
+   534→|------|-------|----------|--------|
+   535→| **Trial** | R0 (7 days) | Full MVP features, 10 leads max | Everyone |
+   536→| **Starter** | R4,999/mo | 1 website, 100 leads/mo, WhatsApp notifications, dashboard | Solopreneurs, small firms |
+   537→| **Growth** | R9,999/mo | 3 websites, unlimited leads, AI chatbot, email summaries, custom domain | Growing firms (5-20 staff) |
+   538→| **Agency** | R24,999/mo | 10 websites, white-label, API access, priority support | Agencies managing multiple clients |
+   539→
+   540→---
+   541→
+   542→# PART 2: BUILD — PHASE 0 CODING PROMPT
+   543→
+   544→Copy this **entire prompt** and paste it into **Cursor** (or Claude Code / Lovable):
+   545→
+   546→---
+   547→
+   548→```markdown
+   549→# PROMPT: NhahaLabs Platform — Phase 0 Scaffold
+   550→
+   551→You are building a multi-tenant SaaS platform called "NhahaLabs Platform". 
+   552→The first product is "Lead Machine" — an AI-powered lead generation platform for South African SMEs.
+   553→
+   554→## Tech Stack (DO NOT CHANGE):
+   555→- Next.js 15 App Router
+   556→- TypeScript (strict mode)
+   557→- Tailwind CSS v4
+   558→- shadcn/ui components
+   559→- Neon PostgreSQL (serverless)
+   560→- Drizzle ORM
+   561→- Clerk Authentication (multi-tenant with organizations)
+   562→- Vercel AI SDK
+   563→- Paystack (billing)
+   564→- Evolution API (WhatsApp — via webhook)
+   565→- Vercel deployment
+   566→- Turborepo monorepo
+   567→
+   568→## Task: Create the complete monorepo scaffold
+   569→
+   570→### 1. Initialize Turborepo monorepo with:
+   571→- `apps/web` — Next.js 15 App Router app
+   572→- `packages/db` — Drizzle schema + migrations
+   573→- `packages/shared` — Shared types, Zod validators, constants
+   574→- `packages/ai` — AI agent framework (Vercel AI SDK wrappers)
+   575→
+   576→### 2. In `apps/web`, set up:
+   577→
+   578→#### App Router structure:
+   579→```
+   580→app/
+   581→├── layout.tsx                    (root layout, fonts, metadata)
+   582→├── page.tsx                      (marketing landing page — placeholder)
+   583→├── (auth)/
+   584→│   ├── sign-in/[[...sign-in]]/page.tsx
+   585→│   └── sign-up/[[...sign-up]]/page.tsx
+   586→├── (dashboard)/
+   587→│   ├── layout.tsx                (sidebar + header + org switcher)
+   588→│   └── [orgId]/
+   589→│       ├── page.tsx              (overview — redirect to /leads)
+   590→│       ├── leads/page.tsx        (lead list — placeholder)
+   591→│       ├── website/page.tsx      (website builder — placeholder)
+   592→│       ├── settings/page.tsx     (org settings — placeholder)
+   593→│       └── billing/page.tsx      (billing — placeholder)
+   594→├── s/[slug]/page.tsx             (public: client's generated website)
+   595→└── api/
+   596→    ├── leads/route.ts            (POST: create lead — placeholder)
+   597→    ├── whatsapp/webhook/route.ts (POST: Evolution API webhook — placeholder)
+   598→    ├── ai/qualify/route.ts       (POST: AI lead qualification — placeholder)
+   599→    └── billing/webhook/route.ts  (POST: Paystack webhook — placeholder)
+   600→```
+   601→
+   602→#### Components:
+   603→- `components/ui/` — Install shadcn/ui: button, card, input, label, select, badge, dialog, dropdown-menu, table, tabs, toast
+   604→- `components/layout/sidebar.tsx` — Dashboard sidebar with nav items
+   605→- `components/layout/header.tsx` — Top header with org name + user menu
+   606→- `components/layout/org-switcher.tsx` — Clerk org switcher
+   607→
+   608→#### Middleware:
+   609→- `middleware.ts` — Clerk auth middleware, protect /dashboard routes, public /s/[slug] and /api/whatsapp/webhook
+   610→
+   611→### 3. In `packages/db`, create Drizzle schema:
+   612→
+   613→Tables:
+   614→- `organizations` (id, name, slug, industry, services, logoUrl, primaryColor, whatsappNumber, whatsappConnected, evolutionInstanceId, plan, trialEndsAt, createdAt, updatedAt)
+   615→- `memberships` (id, orgId, userId, role, status, createdAt)
+   616→- `leads` (id, orgId, name, phone, email, serviceNeeded, message, source, aiScore, aiTemperature, aiReason, status, whatsappSent, ownerNotified, consentGiven, createdAt, updatedAt)
+   617→- `websites` (id, orgId, template, heroHeadline, heroSubtext, aboutText, services JSONB, faq JSONB, customDomain, published, createdAt, updatedAt)
+   618→- `whatsapp_messages` (id, orgId, leadId, direction, phoneNumber, content, messageType, status, evolutionMessageId, createdAt)
+   619→- `subscriptions` (id, orgId, paystackCustomerId, paystackSubscriptionId, plan, amountZar, status, currentPeriodStart, currentPeriodEnd, cancelledAt, createdAt)
+   620→
+   621→Use:
+   622→- `pgTable` from drizzle-orm/pg-core
+   623→- UUID primary keys with `defaultRandom()`
+   624→- Proper relations with `relations()`
+   625→- Timestamps with `defaultNow()`
+   626→- Indexes on orgId for all tenant-scoped tables
+   627→
+   628→### 4. In `packages/shared`, create:
+   629→- `types/` — TypeScript interfaces for all entities
+   630→- `validators/` — Zod schemas for: createOrg, updateOrg, createLead, updateLeadStatus, generateWebsite
+   631→- `constants/` — PLANS, INDUSTRIES, LEAD_STATUSES, AI_TEMPERATURES
+   632→
+   633→### 5. Configuration files:
+   634→- `drizzle.config.ts` — Neon PostgreSQL connection string from env
+   635→- `tailwind.config.ts` — shadcn/ui theme
+   636→- `next.config.ts` — Turbopack enabled
+   637→- `.env.example` — All required env vars:
+   638→  ```
+   639→  DATABASE_URL=
+   640→  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+   641→  CLERK_SECRET_KEY=
+   642→  PAYSTACK_SECRET_KEY=
+   643→  PAYSTACK_PUBLIC_KEY=
+   644→  EVOLUTION_API_URL=
+   645→  EVOLUTION_API_KEY=
+   646→  OPENAI_API_KEY=
+   647→  ```
+   648→- `package.json` scripts: dev, build, db:generate, db:migrate, db:push, db:studio
+   649→
+   650→### 6. Install all dependencies:
+   651→- next, react, react-dom
+   652→- @clerk/nextjs
+   653→- drizzle-orm, drizzle-kit, @neondatabase/serverless
+   654→- @ai-sdk/openai, ai
+   655→- zod
+   656→- tailwindcss, @tailwindcss/postcss
+   657→- lucide-react
+   658→- class-variance-authority, clsx, tailwind-merge
+   659→- All shadcn/ui dependencies
+   660→
+   661→### 7. Create a README.md with:
+   662→- Project overview
+   663→- Setup instructions
+   664→- Environment variables guide
+   665→- Architecture diagram (text)
+   666→
+   667→## IMPORTANT RULES:
+   668→- Use TypeScript strict mode everywhere
+   669→- Use named exports (not default) for all components
+   670→- Use server components by default, add "use client" only where needed
+   671→- Use Zod for ALL input validation
+   672→- Use proper error handling with try/catch in route handlers
+   673→- Add JSDoc comments to all exported functions
+   674→- Follow Next.js App Router best practices
+   675→- Make it production-ready, not a toy
+   676→- Every file must compile with zero TypeScript errors
+   677→```
+   678→
+   679→---
+   680→
+   681→# PART 3: WHAT TO DO RIGHT NOW
+   682→
+   683→## Today's Tasks
+   684→
+   685→**1. Create the GitHub repo.** Go to github.com → New Repository → Name: `nahalabs-platform` → Private → Create. Clone it locally.
+   686→
+   687→**2. Paste the Phase 0 prompt above into Cursor.** Open Cursor → Open the cloned folder → Open Composer (Cmd+I) → Paste the entire prompt → Let it generate. This will take 5-10 minutes. Review the output.
+   688→
+   689→**3. Run `npm install` and `npm run dev`.** Confirm the app loads at localhost:3000. You should see the placeholder landing page. If it compiles with zero errors, Phase 0 is done.
+   690→
+   691→---
+   692→
+   693→*Reply "Phase 0 done" when the app loads. I'll immediately give you the Phase 1 prompt (AI + WhatsApp + Lead Machine logic).* 🚀NAHALABS SOFTWARE ENGINEERING ARCHITECTURE
+   694→
+   695→**Universal engineering instruction set — load this as the first system instruction into any AI coding assistant (Copilot, Cursor, Claude Code, v0, Codex, Gemini CLI, etc.) for every project you build.**
+   696→
+   697→> Applies to: every application you build — SaaS, AI platforms, CRMs, ERPs, marketplaces, logistics, healthcare, fintech, retail, geospatial, internal tools, automation products — unless a project explicitly overrides a section with a recorded justification.
+   698→
+   699→> **Who this is for:** A solo founder building enterprise-grade software with AI coding assistants. You are not a team of engineers. You are one person with a laptop, an AI pair-programmer, and a vision. This standard gives you the guardrails to build production-quality software without a team, without DevOps, and without the architecture collapsing under its own weight.
+   700→
+   701→---
+   702→
+   703→## 0. Prime Directive
+   704→
+   705→Build every application as a **modular, AI-native, full-stack monolith** on Next.js App Router, deployed serverlessly on Vercel, organized by business domain, with clean module boundaries that permit later extraction.
+   706→
+   707→**One repo. One deployment. One database. One auth provider. One AI SDK. One WhatsApp provider. One deployment target.**
+   708→
+   709→Split into microservices only when production metrics prove it necessary. Never pre-emptively. You are one person. Complexity is your enemy.
+   710→
+   711→Optimize, in order, for:
+   712→1. **Correctness and security** — it must work and it must be safe
+   713→2. **Development velocity** — you must be able to build fast with AI assistance
+   714→3. **Low total cost of ownership** — free tiers first, pay only when revenue justifies it
+   715→4. **Enterprise scalability** — via extraction-ready design, not premature distribution
+   716→5. **Maintainability** — future-you (or a future AI session) must understand it
+   717→
+   718→### The mental model
+   719→- One repository. One deployment. One production URL.
+   720→- One backend (Route Handlers + Server Actions). One database (Neon PostgreSQL).
+   721→- One auth provider (Clerk). One AI SDK (Vercel AI SDK). One WhatsApp provider (Evolution API).
+   722→- Many integrations — all webhook-first, all wrapped in typed clients, all swappable.
+   723→
+   724→> **From the trenches:** The CargoIQ journey proved that the #1 killer of AI-assisted projects is not bad code — it's *multiple AI sessions clobbering each other's work*, *builds going red on the deployment platform while passing locally*, and *half-wired integrations that look done but silently fail in production*. This standard exists to prevent those three things.
+   725→
+   726→---
+   727→
+   728→## 1. The Stack — One Choice Per Layer, No Alternatives
+   729→
+   730→Every project uses this exact stack. No "or Prisma if justified." No "or Auth.js." No "or Supabase." One tool per job. Fewer decisions = fewer mistakes.
+   731→
+   732→| Layer | The One Choice | Why This One |
+   733→|---|---|---|
+   734→| **Framework** | Next.js (latest, App Router) + TypeScript (strict) | Frontend AND backend in one repo. One `npm run build`. One deploy. |
+   735→| **UI** | Tailwind CSS + shadcn/ui | Design tokens, no ad-hoc colors, consistent look across all your apps. |
+   736→| **Forms / Validation** | React Hook Form + Zod | Zod schemas shared client/server. One schema, two uses. |
+   737→| **Client data fetching** | TanStack Query | Never fetch in `useEffect`. Cache, retry, and loading states for free. |
+   738→| **Client state** | Zustand — only when server state isn't enough | Prefer server state. Add Zustand only for genuinely client-only state. |
+   739→| **Database** | Neon PostgreSQL | Serverless, free tier, connection pooling, pgvector-ready. One database for everything. |
+   740→| **ORM** | Drizzle ORM + `drizzle-kit push` | Typed queries, simple idempotent schema sync. No migration files to manage manually. |
+   741→| **Auth** | **Clerk** (and nothing else) | Prebuilt sign-in/up, session management, middleware gating, free for 10k MAU. Zero custom auth code. Ever. |
+   742→| **AI** | Vercel AI SDK | Provider-agnostic (OpenAI, Gemini, Claude, Groq, etc.), streaming, tool calling. One SDK, any model. |
+   743→| **File storage** | Vercel Blob | Managed, no infra, no S3 buckets to configure. |
+   744→| **Payments** | PayFast / Stripe behind a common abstraction | Webhooks are payment truth. Browser redirects are never confirmation. |
+   745→| **WhatsApp** | Evolution API (self-hosted on Render, free tier) | One instance per tenant. Webhook-first. Free. |
+   746→| **Email** | Provider-abstracted client (optional) | Resend, Gmail SMTP, or SES — swap one file. Email is secondary; WhatsApp is primary. |
+   747→| **Deployment** | Vercel | Serverless, preview deploys per PR, free tier, edge network. |
+   748→| **Background workers** | Render (free tier) | Playwright automation, portal scraping, heavy compute. Wake-up cron via GitHub Actions. |
+   749→| **E2E testing** | Playwright | Real browser, real clicks, real assertions. **Run against production, not just localhost.** |
+   750→| **Version control** | GitHub | One repo per app. GitHub Actions for crons and CI. |
+   751→
+   752→**Never** create a separate FastAPI / Express / NestJS / Django backend. **Never** use a different database. **Never** use a different auth provider. **Never** use a different deployment target. The stack is the stack.
+   753→
+   754→> **From the trenches:** CargoIQ started with Better Auth, then custom scrypt passwords, then session cookies — three auth systems in one project, all broken, all fighting each other. Clerk ended that in one afternoon. The lesson: **pick the managed, prebuilt, "it just works" option every time.** You are not building auth. You are building a business.
+   755→
+   756→---
+   757→
+   758→## 2. Repository & Domain Architecture
+   759→
+   760→Organize by **business capability**, never by technical layer.
+   761→
+   762→```
+   763→src/
+   764→  app/                        # Next.js App Router
+   765→    (marketing)/              # Public pages (landing, pricing, blog)
+   766→    (app)/                    # Authenticated app (dashboard, features)
+   767→    api/                      # Route Handlers — the backend
+   768→      webhooks/               #   evolution/ payments/ shopify/ ...
+   769→      v1/                     #   public/partner API (versioned only when public)
+   770→  modules/                    # Business domains — the heart of the system
+   771→    tenants/
+   772→    users/
+   773→    products/
+   774→    orders/
+   775→    payments/
+   776→    chat/
+   777→    ai/
+   778→    search/
+   779→    notifications/
+   780→    analytics/
+   781→    workflows/
+   782→    [domain-specific]/        # e.g., compliance/, drivers/, invoices/
+   783→  lib/
+   784→    integrations/             # One typed client per external SaaS/platform
+   785→      evolution/              #   WhatsApp (Evolution API)
+   786→      stripe/  payfast/       #   Payments
+   787→      shopify/                #   E-commerce
+   788→      resend/  gmail/         #   Email (swappable)
+   789→    adapters/                 # One adapter per open-source component
+   790→      whisper/  docling/      #   Speech, document parsing
+   791→      qdrant/                 #   Vector search
+   792→    db/                       # Drizzle schema, tenant-scoped query helpers
+   793→    events/                   # Event bus / emitter
+   794→    ai/                       # Provider abstraction, tool registry, prompts, evals
+   795→  shared/                     # Cross-domain utils, types, constants
+   796→```
+   797→
+   798→### Module contract
+   799→Every module owns its: service functions (business logic), Zod validation schemas, database access, types, events emitted, and tests. Modules communicate via **exported service functions and events — never by reaching into each other's tables.**
+   800→
+   801→### Layering rules
+   802→1. **Route Handlers are thin:** authenticate (Clerk `auth()`) → validate (Zod) → call service → return typed response. No business logic in handlers.
+   803→2. **Services are rich:** all business rules live in `modules/*/service.ts`, framework-agnostic, so extraction to a standalone service later is mechanical.
+   804→3. **UI never talks to integrations or the DB directly** — only through Route Handlers or Server Actions.
+   805→4. Prefer **Server Components** for reads, **Server Actions** for tightly coupled UI mutations, **REST Route Handlers** for anything external systems or multiple clients consume.
+   806→
+   807→### The Single Authority Rule
+   808→> **From the trenches:** Multiple AI sessions created competing versions of the same homepage component, overwriting each other's fixes. The live site ended up with a Frankenstein of half-fixed copy.
+   809→
+   810→**Every file has exactly one owner.** When an AI session creates or modifies a file, it must not create a *parallel* version of an existing component. If a component needs changing, **edit the existing file** — never create `Hero-v2.tsx` alongside `Hero.tsx`. If you're unsure whether a component already exists, **search first, create second.**
+   811→
+   812→---
+   813→
+   814→## 3. Auth: Clerk Only
+   815→
+   816→**Clerk is the sole authentication and identity provider for every application. No Better Auth. No Auth.js. No custom scrypt. No session cookies. No password hashing. No "or Auth.js if justified." Clerk, period.**
+   817→
+   818→### Why Clerk
+   819→- Prebuilt sign-in / sign-up / user-management UI components that look professional out of the box and are themeable to your design system.
+   820→- Session management, cookie handling, edge-runtime compatibility, and middleware gating — all handled by Clerk, not by you.
+   821→- Free for 10,000 monthly active users. No credit card.
+   822→- First-class Next.js App Router support. Works natively on Vercel.
+   823→- Eliminates the entire class of "auth is broken" bugs that plague hand-rolled systems.
+   824→
+   825→### Clerk integration pattern (every project)
+   826→
+   827→**1. Install:**
+   828→```bash
+   829→npm install @clerk/nextjs
+   830→```
+   831→
+   832→**2. Environment variables (two keys, two places):**
+   833→```
+   834→NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+   835→CLERK_SECRET_KEY=sk_...
+   836→```
+   837→Set in both local `.env` and Vercel Environment Variables. The `pk_` key is public (that's the `NEXT_PUBLIC_` prefix). The `sk_` key is server-only. Neither goes to GitHub.
+   838→
+   839→**3. Provider (root layout):**
+   840→```tsx
+   841→// src/app/layout.tsx
+   842→import { ClerkProvider } from '@clerk/nextjs';
+   843→
+   844→export default function RootLayout({ children }) {
+   845→  return (
+   846→    <html lang="en">
+   847→      <body>
+   848→        <ClerkProvider appearance={{ /* your design tokens */ }}>
+   849→          {children}
+   850→        </ClerkProvider>
+   851→      </body>
+   852→    </html>
+   853→  );
+   854→}
+   855→```
+   856→Theme Clerk to your design system via the `appearance` prop (colors, fonts, border radius). Clerk's card becomes your brand.
+   857→
+   858→**4. Middleware (gate protected routes):**
+   859→```ts
+   860→// src/middleware.ts
+   861→import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+   862→
+   863→const isProtected = createRouteMatcher([
+   864→  '/dashboard(.*)', '/settings(.*)', '/onboarding(.*)',
+   865→  // ... add your app's protected routes
+   866→]);
+   867→
+   868→export default clerkMiddleware(async (auth, req) => {
+   869→  if (isProtected(req)) await auth.protect();
+   870→});
+   871→
+   872→export const config = {
+   873→  matcher: [
+   874→    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+   875→    '/(api|trpc)(.*)',
+   876→    '/__clerk/:path*',
+   877→  ],
+   878→};
+   879→```
+   880→Public routes (landing page, pricing, `/api/webhooks/*`, `/api/health`) stay open. Protected routes bounce unauthenticated visitors to `/login`.
+   881→
+   882→**5. Sign-in / Sign-up pages:**
+   883→```tsx
+   884→// src/app/login/page.tsx
+   885→import { SignIn } from '@clerk/nextjs';
+   886→export default function LoginPage() {
+   887→  return (
+   888→    <div className="min-h-screen bg-[your-dark] flex items-center justify-center">
+   889→      <SignIn routing="path" path="/login" signUpUrl="/signup" afterSignInUrl="/onboarding" />
+   890→    </div>
+   891→  );
+   892→}
+   893→
+   894→// src/app/signup/page.tsx
+   895→import { SignUp } from '@clerk/nextjs';
+   896→export default function SignupPage() {
+   897→  return (
+   898→    <div className="min-h-screen bg-[your-dark] flex items-center justify-center">
+   899→      <SignUp routing="path" path="/signup" signInUrl="/login" afterSignUpUrl="/onboarding" />
+   900→    </div>
+   901→  );
+   902→}
+   903→```
+   904→No custom forms. No password hashing. No session cookies. Clerk handles everything.
+   905→
+   906→**6. Reading the authenticated user (server-side):**
+   907→```ts
+   908→import { auth } from '@clerk/nextjs/server';
+   909→
+   910→// In a Server Component or Route Handler:
+   911→const { userId } = await auth();  // Next.js 15+: auth() is async
+   912→if (!userId) { /* not signed in */ }
+   913→```
+   914→
+   915→**7. Linking Clerk users to your tenant system (onboarding):**
+   916→Every multi-tenant app needs an onboarding step that creates the tenant and links it to the Clerk user:
+   917→
+   918→- Add a `clerk_id` column (varchar, unique, indexed) to your `users` table.
+   919→- Create `/onboarding` (protected route): if the signed-in Clerk user has no tenant yet, show a form ("Name your company"). On submit, create a `tenants` row + a `users` row with `clerk_id = userId`, then redirect to `/dashboard`.
+   920→- If the user already has a tenant, `/onboarding` redirects straight to `/dashboard`.
+   921→- All subsequent tenant lookups go through `clerk_id`: `SELECT * FROM users WHERE clerk_id = $1 → tenantId`.
+   922→
+   923→**8. User button (signed-in state):**
+   924→```tsx
+   925→import { UserButton } from '@clerk/nextjs';
+   926→// In your app's header/sidebar:
+   927→<UserButton afterSignOutUrl="/" />
+   928→```
+   929→
+   930→### What you NEVER do with auth
+   931→- ❌ Write your own password hashing (scrypt, bcrypt, argon2)
+   932→- ❌ Create your own session table or cookie management
+   933→- ❌ Use Better Auth, Auth.js, NextAuth, Supabase Auth, Firebase Auth, or any other auth library
+   934→- ❌ Build custom sign-in / sign-up forms (use Clerk's `<SignIn />` and `<SignUp />`)
+   935→- ❌ Store passwords in your database (Clerk handles credential storage)
+   936→- ❌ Trust client-side auth state for authorization (always verify server-side via `auth()`)
+   937→
+   938→> **From the trenches:** CargoIQ went through three auth systems (Better Auth → custom scrypt → Clerk) across multiple AI sessions. Each one broke in a different way. The custom scrypt system had a dead sign-in button, a missing sign-in endpoint, and a signup route that called a library against database tables that didn't exist. Clerk ended all of it in one afternoon. **Never build auth. Rent it.**
+   939→
+   940→---
+   941→
+   942→## 4. AI-First Architecture
+   943→
+   944→Every application includes an AI layer as a first-class capability, using the **Vercel AI SDK** as the sole abstraction.
+   945→
+   946→### Responsibilities
+   947→Conversation · reasoning · planning · classification · recommendations · semantic search · summarization · extraction · memory · tool calling · workflow orchestration.
+   948→
+   949→### Iron rules
+   950→1. **Business rules never live in prompts.** Rules live in services; AI orchestrates services via tool calling.
+   951→2. **Grounded by construction:** every factual claim (prices, stock, balances, statuses) must originate from a tool call into application data. The model composes language; it never sources facts from weights.
+   952→3. **Provider-agnostic via Vercel AI SDK:** a single abstraction routes to OpenAI / Gemini / Claude / Groq / OpenRouter / Azure / Ollama. Switching providers or routing task classes to different models (cheap-fast vs. frontier) is configuration, not code. **Never import a provider SDK directly** — always go through `ai` from `@ai-sdk/*`.
+   953→4. **Tool registry:** tools are typed (Zod schemas), permission-checked per user/tenant, and audited.
+   954→5. **Memory tiers:** conversation (short-term) → user/customer profile (long-term, consented, deletable) → domain knowledge (RAG over pgvector).
+   955→6. **Evaluation gate:** maintain a golden-conversation test suite; score grounding accuracy, refusal correctness, and tone on every prompt/model change before deploy.
+   956→7. **Cost controls:** per-tenant token budgets, semantic caching, streaming responses by default.
+   957→8. **Prompt-injection defense:** user-supplied content (documents, images, messages) is data, never instructions.
+   958→
+   959→### What you NEVER do with AI
+   960→- ❌ Use LangChain, LlamaIndex, or any other orchestration framework (Vercel AI SDK is the one)
+   961→- ❌ Import `openai`, `@google/generative-ai`, or `anthropic` directly in application code (go through the AI SDK)
+   962→- ❌ Put business logic in system prompts (put it in services; AI calls services via tools)
+   963→- ❌ Let the model source facts from its weights (always ground via tool calls)
+   964→
+   965→---
+   966→
+   967→## 5. Multi-Tenancy Standard
+   968→
+   969→Default model: **shared database, `tenant_id` column on every business table, enforced at the data-access layer.**
+   970→
+   971→- Every query helper requires a tenant context; raw unscoped queries are lint-blocked.
+   972→- Tenant isolation applies equally to: SQL queries, vector searches, AI tool calls, file storage paths, cache keys, and analytics.
+   973→- Automated cross-tenant leak tests run in CI. A leak is a Sev-1.
+   974→- Per-tenant database isolation is an enterprise upsell to design for, not a default to build.
+   975→- RBAC baseline: Owner / Admin / Member (+ domain roles as needed), enforced server-side via Clerk metadata or your own roles table. **Never trust the frontend.**
+   976→
+   977→### Clerk + Multi-tenancy integration
+   978→- Clerk handles **identity** (who is this person?). Your app handles **tenancy** (which company do they belong to?).
+   979→- The `clerk_id` column on your `users` table is the bridge: Clerk `userId` → your `users.clerk_id` → `users.tenant_id` → tenant-scoped queries.
+   980→- Onboarding creates the tenant. All subsequent data access is scoped by `tenant_id`.
+   981→- Clerk Organizations (multi-tenancy) is **not** used by default — your app's own `tenants` table is simpler and gives you full control. Enable Clerk Organizations only if a project explicitly needs Clerk's built-in org management.
+   982→
+   983→---
+   984→
+   985→## 6. Integration Architecture
+   986→
+   987→**Every external system connects through a dedicated integration client and terminates at a dedicated webhook route.** Never scatter SDK/HTTP calls through the application.
+   988→
+   989→```
+   990→Client channels (Web · WhatsApp · Mobile · Slack · Email · API)
+   991→        ↓
+   992→Integration layer (src/lib/integrations/* — one typed client per provider)
+   993→        ↓
+   994→Webhook layer (app/api/webhooks/<provider> — verify → normalize → enqueue/dispatch)
+   995→        ↓
+   996→Application core (services + AI engine + events)
+   997→        ↓
+   998→Neon PostgreSQL → response back out through the same integration client
+   999→```
+  1000→
+  1001→### Webhook rules (universal)
+  1002→- Verify authenticity (signature/secret/source) **before** any processing.
+  1003→- Normalize provider payloads into internal types at the boundary.
+  1004→- Idempotency: dedupe by provider event ID; webhooks will be delivered twice.
+  1005→- Persist the raw event before processing (audit + replay).
+  1006→- Respond fast (2xx), do heavy work asynchronously.
+  1007→
+  1008→### Evolution API (WhatsApp) standard
+  1009→- One reusable Evolution client in `src/lib/integrations/evolution/`; never called from UI components.
+  1010→- One Evolution instance per tenant; one shared webhook endpoint (`app/api/webhooks/evolution`) that routes by instance.
+  1011→- Ignore bot-authored messages; log all inbound/outbound messages; normalize before business logic.
+  1012→- Evolution runs on **Render free tier** with a **GitHub Actions wake-up cron** pinging `/wake` every 10 minutes to prevent sleep.
+  1013→- WhatsApp is the **primary** messaging channel. Email is secondary and optional.
+  1014→
+  1015→### Email standard (optional, provider-abstracted)
+  1016→- Email lives behind a single client in `src/lib/integrations/email/` (or `brevo/`, `resend/`, `gmail/`).
+  1017→- The notification service (`src/lib/notifications/`) calls the email client; it never imports a provider SDK directly.
+  1018→- Swapping providers (Brevo → Resend → Gmail SMTP → SES) is a **one-file change** in the client. The rest of the app never knows.
+  1019→- If no email provider is configured, `sendEmailSafe()` logs and returns null — **never crashes**.
+  1020→- Email is **optional** for MVP. WhatsApp covers the critical alerts. Add email when revenue justifies it or when a client explicitly needs it.
+  1021→
+  1022→### Payments standard
+  1023→- Providers (PayFast, YOCO, Stripe) live behind a common payment abstraction in `src/lib/integrations/payments/`.
+  1024→- **Browser redirects are never payment confirmation. Provider webhooks are the sole source of truth.** Verify signature, source, and amount before updating order state.
+  1025→- Credentials exclusively from environment variables.
+  1026→
+  1027→---
+  1028→
+  1029→## 7. Data & Events
+  1030→
+  1031→### Database design
+  1032→- **Neon PostgreSQL is the single database.** No Supabase. No PlanetScale. No MongoDB. No Redis (unless a project explicitly justifies it).
+  1033→- Single source of truth; never duplicate business state across systems.
+  1034→- Canonical baseline schema (extend per domain): `tenants, users, roles, memberships, products, orders, customers, conversations, messages, documents, notifications, events, audit_logs, settings, integrations, ai_memory, embeddings`.
+  1035→- Schema sync via `drizzle-kit push` (idempotent, simple, no migration files to manage). For production-critical schema changes, use `drizzle-kit generate` + `drizzle-kit migrate` for auditable migrations.
+  1036→- Parameterized queries only. Never string-concatenate SQL.
+  1037→
+  1038→### Event-driven design
+  1039→Every significant business action emits a domain event (`OrderPlaced`, `PaymentConfirmed`, `MessageReceived`, `WorkflowCompleted`, ...), persisted to an `events` table.
+  1040→
+  1041→Events power: analytics, attribution, notifications, AI memory, audit trails, and future integrations — and they are the seam along which services are later extracted.
+  1042→
+  1043→### Search (layered, in order)
+  1044→1. Postgres full-text search + filters
+  1045→2. Semantic search (pgvector)
+  1046→3. AI-assisted / hybrid re-ranked search
+  1047→
+  1048→Users search naturally; keywords are a fallback, not the interface.
+  1049→
+  1050→---
+  1051→
+  1052→## 8. API Standards
+  1053→
+  1054→- REST by default; Server Actions for tightly coupled UI mutations.
+  1055→- Validate **all** input with Zod at the boundary; infer types from schemas.
+  1056→- Typed responses; structured error objects `{ error: { code, message, details? } }`; correct HTTP status codes.
+  1057→- Version (`/api/v1/...`) only APIs consumed by external parties.
+  1058→- Rate-limit all public endpoints. Paginate all list endpoints.
+  1059→- **Never return raw database errors to the client.** Catch, log, and return a structured error with a safe message.
+  1060→
+  1061→---
+  1062→
+  1063→## 9. Security Baseline (non-negotiable, every project, every size)
+  1064→
+  1065→- **Clerk handles authentication.** Your app handles authorization (tenant scoping, role checks) server-side via `auth()` from `@clerk/nextjs/server`.
+  1066→- Tenant isolation (see §5) and per-query user scoping.
+  1067→- Input validation (Zod) and output encoding everywhere.
+  1068→- Secrets only in environment variables — never in code, never in the client bundle, never in GitHub.
+  1069→- Webhook signature verification; HTTPS everywhere.
+  1070→- Rate limiting; parameterized queries; audit logging of sensitive actions.
+  1071→- Encryption in transit and at rest; PII minimization.
+  1072→- Compliance posture appropriate to market (POPIA/GDPR): consent, purpose limitation, right to deletion (including AI memory and Clerk user data).
+  1073→- **Clerk secret key (`sk_`) is server-only.** Never expose it in client code, never commit it, never log it.
+  1074→
+  1075→Security is designed in from commit one — never retrofitted.
+  1076→
+  1077→---
+  1078→
+  1079→## 10. Build Resilience
+  1080→
+  1081→> **From the trenches:** CargoIQ's Vercel build went red for days because the code assumed environment variables were always present at build time. The local build passed (`.env` existed), but Vercel's build environment didn't have the vars, so the build crashed. Meanwhile, the developer kept pushing fixes that built green locally but red on Vercel, creating a growing pile of undeployed commits.
+  1082→
+  1083→### Rule 1: The build must pass with ZERO environment variables
+  1084→Every page, component, and module must be importable and buildable without any env vars present. This means:
+  1085→- **Database clients are nullable:** `export const db = process.env.DATABASE_URL ? drizzle(neon(process.env.DATABASE_URL), { schema }) : null;`
+  1086→- **Services guard against null db:** `if (!db) throw new Error('DATABASE_NOT_CONFIGURED');` at the top of any function that touches the database.
+  1087→- **Auth-dependent pages use `export const dynamic = 'force-dynamic';`** so they're not statically pre-rendered at build time (which would trigger auth/db calls during the build).
+  1088→- **API keys for external services are read at runtime, not at module load time.** Never call `new SomeClient(process.env.API_KEY!)` at the top level of a module. Read the key inside the function that uses it.
+  1089→
+  1090→### Rule 2: Local green ≠ Vercel green
+  1091→Always verify the Vercel deployment status after pushing. The Deployments tab is the source of truth, not your terminal. If the local build passes but Vercel's build fails, the error is in the Vercel build log — read it, don't guess.
+  1092→
+  1093→### Rule 3: Test against production, not just localhost
+  1094→Playwright E2E tests must run against the **live production URL** (via `BASE_URL=https://your-app.vercel.app`), not just `localhost:3000`. A test that passes locally but fails in production is a false green. The Playwright config should support both:
+  1095→```ts
+  1096→const baseURL = process.env.BASE_URL || 'http://localhost:3000';
+  1097→const isLocal = baseURL.includes('localhost');
+  1098→// Skip the local dev server when testing production:
+  1099→...(isLocal ? { webServer: { command: 'npm run dev', url: baseURL, reuseExistingServer: true } } : {}),
+  1100→```
+  1101→
+  1102→### Rule 4: Graceful degradation over hard crashes
+  1103→If an external service is unreachable, the app should log the error and continue — not crash. `sendEmailSafe()` returns null on failure. The Evolution webhook returns 200 even if the reply-send fails. The AI tool call catches errors and returns a structured failure the model can handle.
+  1104→
+  1105→### Rule 5: The selftest pattern
+  1106→Every critical pipeline (auth → data → notification → reply) gets a `/api/v1/selftest` endpoint that exercises the full flow with synthetic data and returns a structured result. This lets you verify the pipeline with a single `curl` command, without needing a real user, a real phone, or a real payment. Build it early. Use it often.
+  1107→
+  1108→---
+  1109→
+  1110→## 11. Vibe Coder Operating Rules
+  1111→
+  1112→> These rules exist because you are building with AI coding assistants, and AI assistants have specific failure modes that a team of human engineers would naturally avoid. These rules compensate for those failure modes.
+  1113→
+  1114→### Rule 1: One session, one scope
+  1115→When you give an AI assistant a task, **scope it to one module or one concern.** Don't say "fix auth, redesign the homepage, and wire the WhatsApp webhook" in one prompt. Say "fix auth" → verify → "redesign the homepage" → verify → "wire the webhook." Each prompt should touch a bounded set of files. This prevents the AI from clobbering unrelated code.
+  1116→
+  1117→### Rule 2: Search before you create
+  1118→Before creating any new file, **search the repo for an existing file that does the same thing.** AI assistants love creating `Hero-v2.tsx` when `Hero.tsx` already exists. The instruction "read the existing code first, then edit it" should be in every prompt.
+  1119→
+  1120→### Rule 3: Verify against production after every push
+  1121→After every `git push`, check the Vercel Deployments tab. If the build is red, **stop and fix it before doing anything else.** A pile of undeployed commits is a time bomb. The live site is the truth; your local build is a suggestion.
+  1122→
+  1123→### Rule 4: Don't build what you don't need yet (YAGNI for founders)
+  1124→You don't need email if WhatsApp covers your alerts. You don't need a custom auth system if Clerk works. You don't need a vector database if Postgres full-text search handles your queries. You don't need a message queue if a cron job does the job. **Build the simplest thing that works for your next 10 users, not your imaginary 10,000.**
+  1125→
+  1126→### Rule 5: Provider-abstract everything you might swap
+  1127→Email provider, payment provider, AI model, WhatsApp instance — all behind typed clients in `src/lib/integrations/`. Swapping is a one-file change. This is the difference between "I'm locked in" and "I can switch in an afternoon."
+  1128→
+  1129→### Rule 6: The dress rehearsal before the demo
+  1130→Before showing anything to a real client or investor, **run the full flow end-to-end with real tools:** sign up on the live site, send a real WhatsApp message, check the live dashboard, open the proof page in an incognito window. The selftest endpoint (`/api/v1/selftest`) automates the backend check; the browser check catches what the API can't (broken buttons, wrong copy, missing pages).
+  1131→
+  1132→### Rule 7: Commit early, commit often, commit explicitly
+  1133→After every working change, commit with a descriptive message. Stage files explicitly (`git add src/app/login/page.tsx`), not blindly (`git add .`). This prevents half-finished work or secrets from being committed. If an AI session makes a mess, you can revert to the last good commit.
+  1134→
+  1135→### Rule 8: The AI assistant is a junior developer, not a senior architect
+  1136→AI assistants write plausible code that often has subtle bugs (wrong imports, missing null checks, incorrect API shapes, hardcoded values that should be configurable). **Review what the AI produces.** Run the tests. Check the live site. Don't trust the AI's "build passed" report without verifying it yourself. The AI is fast; you are the quality gate.
+  1137→
+  1138→---
+  1139→
+  1140→## 12. Testing
+  1141→
+  1142→### Testing pyramid (progressive — start small, grow as revenue justifies)
+  1143→
+  1144→**Day 1 (every project):**
+  1145→- Playwright E2E on the critical path (sign up → log in → core feature → log out). **Run against production** (`BASE_URL=https://your-app.vercel.app`), not just localhost.
+  1146→- The selftest endpoint (`/api/v1/selftest`) for backend pipeline verification.
+  1147→- Manual browser check of the live site after every deploy (the "dress rehearsal").
+  1148→
+  1149→**Week 1 (once the core flow works):**
+  1150→- Unit tests on service functions (business logic) — the functions that compute money, enforce rules, or transform data.
+  1151→- Integration tests on Route Handlers and webhooks (including idempotency and auth).
+  1152→
+  1153→**Month 1 (once you have paying clients):**
+  1154→- AI eval suite for prompts/tools (golden-conversation tests, grounding accuracy, refusal correctness).
+  1155→- CI gates: typecheck, lint, tests, migration check on every PR. Preview deployment per PR.
+  1156→- Cross-tenant leak tests.
+  1157→
+  1158→**Quarter 1 (once you have 10+ clients):**
+  1159→- Smoke E2E on every critical path, run in CI on every deploy.
+  1160→- Observability: structured logs with request/tenant IDs, error tracking, key business metrics.
+  1161→- Feature flags for risky launches; instant rollback via Vercel deployments.
+  1162→
+  1163→### Playwright configuration standard
+  1164→```ts
+  1165→// playwright.config.ts
+  1166→import { defineConfig } from '@playwright/test';
+  1167→
+  1168→const baseURL = process.env.BASE_URL || 'http://localhost:3000';
+  1169→const isLocal = baseURL.includes('localhost') || baseURL.includes('127.0.0.1');
+  1170→
+  1171→export default defineConfig({
+  1172→  testDir: './e2e',
+  1173→  timeout: 30_000,
+  1174→  expect: { timeout: 10_000 },
+  1175→  fullyParallel: false,
+  1176→  workers: 1,
+  1177→  retries: process.env.CI ? 2 : 0,
+  1178→  reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+  1179→  use: {
+  1180→    baseURL,
+  1181→    viewport: { width: 1440, height: 900 },
+  1182→    screenshot: 'on',
+  1183→    trace: 'retain-on-failure',
+  1184→  },
+  1185→  ...(isLocal
+  1186→    ? { webServer: { command: 'npm run dev', url: baseURL, reuseExistingServer: true, timeout: 120_000 } }
+  1187→    : {}),
+  1188→});
+  1189→```
+  1190→
+  1191→> **From the trenches:** The Playwright suite passed 9/9 "against production" — but it was actually hitting localhost because the `BASE_URL` env var wasn't picked up by the shell. The live site had completely different (broken) content. The lesson: **always verify which URL the tests are actually hitting**, and prefer running against the real production URL so you're testing what your users see.
+  1192→
+  1193→---
+  1194→
+  1195→## 13. Background Processing
+  1196→
+  1197→Escalate only as workload proves need:
+  1198→
+  1199→1. **Vercel Cron Jobs** — scheduled tasks (daily RLA checks, weekly summaries, monthly certificates).
+  1200→2. **Triggered Route Handlers** — fire-and-forget with persistence (webhook processing, notification sending).
+  1201→3. **Render workers (free tier)** — Playwright automation (portal scraping, PDF generation, heavy compute). Wake-up cron via GitHub Actions pinging `/wake` every 10 minutes.
+  1202→4. **Durable workflows** (Vercel Workflow SDK) — multi-step, resumable orchestration (onboarding sequences, multi-day audit workflows).
+  1203→5. **Message queues** — only when you have genuine throughput/ordering requirements that the above can't handle.
+  1204→
+  1205→### Render worker standard
+  1206→```
+  1207→render-worker/
+  1208→  package.json          # express, dotenv, playwright-core
+  1209→  index.js              # /wake, /health, /api/v1/portals/* endpoints
+  1210→```
+  1211→- `/wake` returns `{"status":"AWAKE"}` — the GitHub Actions cron pings this every 10 minutes.
+  1212→- `/health` returns service status, uptime, and capability flags.
+  1213→- Portal automation endpoints use `playwright-core` with **lazy browser require** (the browser is only launched when a portal route is called, not at startup). If the browser isn't installed, the endpoint returns a structured error — **it never crashes the server.**
+  1214→- The worker is a **separate package** with its own `package.json`. It is NOT part of the Next.js build. Vercel never touches it.
+  1215→
+  1216→### GitHub Actions wake-up cron
+  1217→```yaml
+  1218→# .github/workflows/keep-render-warm.yml
+  1219→name: Keep Render Warm
+  1220→on:
+  1221→  schedule:
+  1222→    - cron: '*/10 * * * *'
+  1223→  workflow_dispatch: {}
+  1224→jobs:
+  1225→  ping:
+  1226→    runs-on: ubuntu-latest
+  1227→    steps:
+  1228→      - name: Wake worker
+  1229→        run: curl -sS -o /dev/null -w "worker=%{http_code}\n" "${{ secrets.WORKER_URL }}/wake" || true
+  1230→      - name: Wake Evolution
+  1231→        run: curl -sS -o /dev/null -w "evolution=%{http_code}\n" "${{ secrets.EVOLUTION_API_URL }}/" || true
+  1232→```
+  1233→
+  1234→---
+  1235→
+  1236→## 14. Quality & Delivery
+  1237→
+  1238→- **TypeScript strict**; no `any` without justification.
+  1239→- **Documentation:** each module gets a short README (purpose, events, public service API). Architecture decisions recorded as lightweight ADRs.
+  1240→- **Feature flags** for risky launches; instant rollback via Vercel deployments.
+  1241→- **Observability:** structured logs with request/tenant IDs, error tracking, key business metrics (not just infra metrics) from day one.
+  1242→
+  1243→---
+  1244→
+  1245→## 15. Scalability & Extraction Playbook
+  1246→
+  1247→Start with one deployable application. When **measured** production metrics show a bottleneck (latency, cost, team contention, compliance boundary), extract **only the affected module**:
+  1248→
+  1249→1. The module already owns its logic, types, and data access (per §2) → move it behind its existing service interface.
+  1250→2. Replace in-process calls with HTTP/queue calls at that interface.
+  1251→3. Migrate its tables last, if ever.
+  1252→
+  1253→Likely extraction candidates: AI engine, search, notifications, analytics pipeline, workflow engine, billing. **Never split pre-emptively.** You are one person. You will not need this for a long time. Design for it; don't build it.
+  1254→
+  1255→---
+  1256→
+  1257→## 16. Open-Source Integration & Architecture Preservation
+  1258→
+  1259→> **The application owns the architecture. The open-source project never owns the application.**
+  1260→
+  1261→Never restructure the application around a repository. Integrate the repository into the existing architecture (§2). The architecture is permanent; repositories are replaceable implementation details.
+  1262→
+  1263→### Repository evaluation framework
+  1264→
+  1265→| Type | Examples | Strategy |
+  1266→|---|---|---|
+  1267→| **1 — Utility** | Logger, date lib, PDF generator, CSV parser | Install directly. No wrapper unless it exposes business functionality. |
+  1268→| **2 — Library / SDK** | AI SDK, OCR SDK, vector DB SDK | Install, then wrap behind an internal service. Never expose vendor APIs throughout the app. |
+  1269→| **3 — Engine** | Recommendation, search, vision, workflow, RAG engines | Integrate through adapters behind domain services. Must remain replaceable. |
+  1270→| **4 — Application** | CRM, ERP, booking system, CMS | **Never deploy as the product.** Extract valuable modules; rebuild inside your architecture. |
+  1271→| **5 — Reference** | Demos, research prototypes | Study and borrow ideas. Never a production dependency. |
+  1272→
+  1273→### Adapter pattern (mandatory for Types 2–4)
+  1274→```
+  1275→Business logic → internal service → adapter (src/lib/adapters/<repo>/) → repository
+  1276→```
+  1277→The application owns the interface; the repository provides the implementation. Swapping engines/repos is a configuration change, not a rewrite.
+  1278→
+  1279→### Fork & upstream strategy
+  1280→- Never ask "should I build my app inside this repository?" — ask "**which capabilities from this repository improve my app?**"
+  1281→- Keep forks minimal and close to upstream. Never couple business logic to forked internals.
+  1282→
+  1283→### Final test
+  1284→Before any integration: *"Which capability does this add to my platform?"* — never *"How do I build my platform inside this repository?"*
+  1285→
+  1286→---
+  1287→
+  1288→## 17. How to Use This Standard with AI Assistants
+  1289→
+  1290→1. **Load this document as the first project instruction** in every new project and every new AI coding session.
+  1291→2. **Scope every prompt to one module or one concern.** Don't ask the AI to "fix everything." Ask it to "fix the sign-in button" or "add the webhook handler for Evolution." Verify after each prompt before moving to the next.
+  1292→3. **Tell the AI to read existing code before creating new files.** The instruction "read the existing code first, then edit it — do not create parallel versions" should be in every prompt.
+  1293→4. **Tell the AI to verify against production, not just localhost.** "Run the Playwright suite with `BASE_URL=https://your-app.vercel.app`" catches what local tests miss.
+  1294→5. **Tell the AI to commit explicitly, not blindly.** "Stage only the files you changed. Never `git add .`. Never commit `.env`."
+  1295→6. **Add focused companion skills** for specific integrations (Evolution API guide, PayFast guide, Clerk onboarding pattern) — they plug into this architecture and must not contradict it.
+  1296→7. **Per-project PRDs define what to build; this standard defines how.** On conflict, the PRD may override with an explicit, recorded justification (ADR).
+  1297→8. **When an assistant proposes separate backends, containers, microservices, or new infrastructure**, require it to first demonstrate the metric or constraint that justifies deviating from §0.
+  1298→
+  1299→### The prompt template (use this structure for every Copilot/Cursor/Claude Code session)
+  1300→
+  1301→```
+  1302→You are my AI coding assistant. I am a vibe coder — run everything in the terminal; never ask me to type commands.
+  1303→
+  1304→GOAL: [one clear, scoped objective]
+  1305→
+  1306→SCOPE RULES:
+  1307→- Read existing code before creating new files. Do not create parallel versions of existing components.
+  1308→- Do NOT touch [list of files/modules that are off-limits for this task].
+  1309→- Do NOT commit secrets (.env, API keys, tokens).
+  1310→- Stage files explicitly (git add <specific files>). Never git add .
+  1311→- Verify the build passes (npm run build) before committing.
+  1312→- If the build fails, fix the error and re-verify. Do not commit on a red build.
+  1313→
+  1314→[Detailed task instructions]
+  1315→
+  1316→REPORT BACK:
+  1317→- What you changed (files + summary)
+  1318→- Build result (green/red)
+  1319→- New commit hash
+  1320→- What to verify manually (if anything)
+  1321→```
+  1322→
+  1323→---
+  1324→
+  1325→## 18. Engineering Principles (summary card)
+  1326→
+  1327→- One repo · one deployment · one database · one auth (Clerk) · one AI SDK · one WhatsApp provider
+  1328→- Modular by business domain; thin handlers, rich services
+  1329→- AI-first by design; grounded by construction; provider-agnostic via Vercel AI SDK
+  1330→- Integration-first: every external system behind a typed client; webhook-first inbound
+  1331→- Webhooks are the source of truth for external state (especially payments)
+  1332→- Events for every significant action; the event log is the audit trail and the extraction seam
+  1333→- Serverless and managed infrastructure by default (Vercel + Neon + Clerk + Render)
+  1334→- Multi-tenant isolation enforced in the data layer, tested in CI
+  1335→- Security and validation from commit one; Clerk handles auth, you handle authorization
+  1336→- Build resilience: the build must pass with zero env vars; test against production; graceful degradation
+  1337→- Vibe coder rules: one session one scope; search before create; verify against prod; YAGNI; commit explicitly
+  1338→- Typed everything; tested boundaries; evaluated AI
+  1339→- Enterprise quality with founder simplicity — optimize for maintainability, velocity, reliability, and low TCO
+  1340→- **Never build auth. Never build what you don't need yet. Never trust the AI's "it works" without checking the live site.**
+  1341→
+  1342→---
+  1343→
+  1344→*Version 5.0 — supersedes v4.1. Changes: mandated Clerk as sole auth provider (§3), added Build Resilience standard (§10), added Vibe Coder Operating Rules (§11), added Playwright-vs-production testing standard (§12), added Render worker + GitHub Actions wake-up pattern (§13), added selftest/dress-rehearsal pattern (§10.5), added single-authority rule (§2), added AI prompt template (§17), simplified stack to one-choice-per-layer (§1), added "from the trenches" lessons throughout, removed all "or X if justified" alternatives in favor of single prescriptive choices.* # Honest Answer: No. Not Fully.
+  1345→
+  1346→I got the **stack** right. I got the **architecture structure** wrong. Here's the gap:
+  1347→
+  1348→## What I Got Right ✅
+  1349→
+  1350→| Layer | My PRD | Your Architecture | Match? |
+  1351→|-------|--------|-------------------|--------|
+  1352→| Framework | Next.js App Router + TS strict | Next.js App Router + TS strict | ✅ |
+  1353→| UI | Tailwind + shadcn/ui | Tailwind + shadcn/ui | ✅ |
+  1354→| Database | Neon PostgreSQL + Drizzle | Neon PostgreSQL + Drizzle | ✅ |
+  1355→| Auth | Clerk | Clerk | ✅ |
+  1356→| AI | Vercel AI SDK | Vercel AI SDK | ✅ |
+  1357→| WhatsApp | Evolution API | Evolution API | ✅ |
+  1358→| Deployment | Vercel | Vercel | ✅ |
+  1359→| Workers | Render | Render | ✅ |
+  1360→| Multi-tenant | org_id on every table | tenant_id on every table | ✅ |
+  1361→
+  1362→## What I Got Wrong ❌
+  1363→
+  1364→| Issue | What I Did | What Your Architecture Says |
+  1365→|-------|-----------|---------------------------|
+  1366→| **Repo structure** | Turborepo monorepo (apps/web + packages/db + packages/ai + packages/shared) | **ONE repo. ONE deployment.** `src/modules/`, `src/lib/`, `src/app/`. No Turborepo. |
+  1367→| **Payments** | Paystack | **PayFast / Stripe** behind a common abstraction |
+  1368→| **Folder pattern** | `packages/db/schema/`, `packages/ai/agents/` | `src/modules/leads/`, `src/lib/ai/`, `src/lib/integrations/evolution/` |
+  1369→| **Build resilience** | Not mentioned | Build must pass with **zero env vars**. Nullable db client. `force-dynamic` on auth pages. |
+  1370→| **Selftest** | Not included | `/api/v1/selftest` endpoint mandatory |
+  1371→| **Testing** | Not mentioned | Playwright E2E **against production URL**, not just localhost |
+  1372→| **Email** | Resend as primary | Email is **optional/secondary**. WhatsApp is primary. |
+  1373→| **AI prompt template** | Freeform prompt | Specific scoped template with SCOPE RULES, REPORT BACK format |
+  1374→| **Vibe coder rules** | Not applied | One session one scope. Search before create. Commit explicitly. |
+  1375→| **Event system** | Not included | Every business action emits a domain event to `events` table |
+  1376→
+  1377→**The biggest error: I designed a monorepo. Your architecture is a modular monolith in ONE repo.**
+  1378→
+  1379→This matters because every coding prompt I gave you would produce the wrong folder structure, and every subsequent AI session would fight the architecture.
+  1380→
+  1381→---
+  1382→
+  1383→## The Corrected Lead Machine Architecture
+  1384→
+  1385→Per your engineering standard, Lead Machine lives inside **one repo** with this structure:
+  1386→
+  1387→```
+  1388→nahalabs-platform/
+  1389→├── src/
+  1390→│   ├── app/
+  1391→│   │   ├── layout.tsx                    # ClerkProvider + fonts
+  1392→│   │   ├── (marketing)/
+  1393→│   │   │   ├── page.tsx                  # Landing page
+  1394→│   │   │   ├── pricing/page.tsx
+  1395→│   │   │   └── login/page.tsx            # Clerk <SignIn />
+  1396→│   │   │   └── signup/page.tsx           # Clerk <SignUp />
+  1397→│   │   ├── (app)/
+  1398→│   │   │   ├── layout.tsx                # Sidebar + header (protected)
+  1399→│   │   │   ├── onboarding/page.tsx       # Create tenant + business profile
+  1400→│   │   │   ├── dashboard/
+  1401→│   │   │   │   ├── page.tsx              # Overview → redirect to /leads
+  1402→│   │   │   │   ├── leads/page.tsx        # Lead list + pipeline
+  1403→│   │   │   │   ├── website/page.tsx      # Website builder / preview
+  1404→│   │   │   │   ├── settings/page.tsx     # Org settings, WhatsApp connect
+  1405→│   │   │   │   └── billing/page.tsx      # PayFast subscription
+  1406→│   │   │   └── s/[slug]/page.tsx         # PUBLIC: client's generated website
+  1407→│   │   └── api/
+  1408→│   │       ├── webhooks/
+  1409→│   │       │   ├── evolution/route.ts    # WhatsApp inbound webhook
+  1410→│   │       │   └── payfast/route.ts      # Payment webhook (source of truth)
+  1411→│   │       ├── v1/
+  1412→│   │       │   ├── leads/route.ts        # Lead CRUD
+  1413→│   │       │   ├── website/route.ts      # Website generate/publish
+  1414→│   │       │   ├── ai/qualify/route.ts   # AI lead qualification
+  1415→│   │       │   ├── ai/chat/route.ts      # AI chatbot (streaming)
+  1416→│   │       │   └── selftest/route.ts     # Pipeline selftest
+  1417→│   │       └── health/route.ts
+  1418→│   │
+  1419→│   ├── modules/                          # Business domains
+  1420→│   │   ├── tenants/
+  1421→│   │   │   ├── service.ts               # Create/update tenant
+  1422→│   │   │   ├── schema.ts                # Zod validators
+  1423→│   │   │   └── types.ts
+  1424→│   │   ├── leads/
+  1425→│   │   │   ├── service.ts               # Create lead, qualify, update status
+  1426→│   │   │   ├── schema.ts
+  1427→│   │   │   └── types.ts
+  1428→│   │   ├── websites/
+  1429→│   │   │   ├── service.ts               # Generate, publish, update website
+  1430→│   │   │   ├── schema.ts
+  1431→│   │   │   └── types.ts
+  1432→│   │   ├── billing/
+  1433→│   │   │   ├── service.ts               # Subscribe, cancel, check status
+  1434→│   │   │   ├── schema.ts
+  1435→│   │   │   └── types.ts
+  1436→│   │   └── notifications/
+  1437→│   │       ├── service.ts               # Send WhatsApp, send email (optional)
+  1438→│   │       └── types.ts
+  1439→│   │
+  1440→│   ├── lib/
+  1441→│   │   ├── db/
+  1442→│   │   │   ├── index.ts                 # Nullable drizzle client
+  1443→│   │   │   ├── schema.ts                # ALL tables in one file (or split)
+  1444→│   │   │   └── helpers.ts               # Tenant-scoped query helpers
+  1445→│   │   ├── ai/
+  1446→│   │   │   ├── provider.ts              # Vercel AI SDK provider config
+  1447→│   │   │   ├── tools/
+  1448→│   │   │   │   ├── lead-qualifier.ts    # AI tool: score + classify lead
+  1449→│   │   │   │   ├── website-generator.ts # AI tool: generate site content
+  1450→│   │   │   │   └── chat-assistant.ts    # AI tool: answer visitor questions
+  1451→│   │   │   └── prompts/
+  1452→│   │   │       ├── legal.ts
+  1453→│   │   │       ├── consulting.ts
+  1454→│   │   │       ├── wellness.ts
+  1455→│   │   │       └── general.ts
+  1456→│   │   ├── integrations/
+  1457→│   │   │   ├── evolution/
+  1458→│   │   │   │   └── client.ts            # Evolution API typed client
+  1459→│   │   │   ├── payfast/
+  1460→│   │   │   │   └── client.ts            # PayFast typed client
+  1461→│   │   │   └── email/
+  1462→│   │   │       └── client.ts            # Optional email (sendEmailSafe)
+  1463→│   │   └── events/
+  1464→│   │       └── emitter.ts               # Domain event emitter → events table
+  1465→│   │
+  1466→│   ├── shared/
+  1467→│   │   ├── types/
+  1468→│   │   ├── constants/
+  1469→│   │   └── validators/
+  1470→│   │
+  1471→│   └── middleware.ts                     # Clerk route protection
+  1472→│
+  1473→├── e2e/
+  1474→│   └── critical-path.spec.ts            # Playwright: signup → lead → WhatsApp
+  1475→│
+  1476→├── drizzle.config.ts
+  1477→├── next.config.ts
+  1478→├── tailwind.config.ts
+  1479→├── playwright.config.ts
+  1480→├── .env.example
+  1481→├── .github/
+  1482→│   └── workflows/
+  1483→│       └── keep-render-warm.yml         # Wake Evolution + workers
+  1484→│
+  1485→└── package.json
+  1486→```
+  1487→
+  1488→---
+  1489→
+  1490→## Corrected Phase 0 Coding Prompt
+  1491→
+  1492→**Copy this ENTIRE prompt into Cursor. This follows your architecture exactly:**
+  1493→
+  1494→```markdown
+  1495→You are my AI coding assistant. I am a vibe coder — run everything in the terminal; never ask me to type commands.
+  1496→
+  1497→GOAL: Scaffold the NhahaLabs Platform — a multi-tenant SaaS for AI-powered lead generation (product: "Lead Machine"). This is Phase 0: project setup, database schema, auth, and app shell.
+  1498→
+  1499→ARCHITECTURE STANDARD (follow exactly, do not deviate):
+  1500→- ONE repo. ONE deployment. ONE database. NOT a monorepo. NOT Turborepo.
+  1501→- Next.js App Router + TypeScript strict mode
+  1502→- Tailwind CSS + shadcn/ui
+  1503→- Neon PostgreSQL + Drizzle ORM (drizzle-kit push, no migration files)
+  1504→- Clerk authentication (sole auth provider — no custom auth, no Better Auth, no Auth.js)
+  1505→- Vercel AI SDK (sole AI abstraction — no LangChain, no direct provider imports)
+  1506→- Evolution API for WhatsApp (typed client in src/lib/integrations/evolution/)
+  1507→- PayFast for payments (typed client in src/lib/integrations/payfast/)
+  1508→- Vercel deployment
+  1509→- Domain-driven modular architecture: src/modules/ for business logic
+  1510→- Multi-tenant: tenant_id column on every business table, enforced at data layer
+  1511→- Build must pass with ZERO environment variables (nullable db client, force-dynamic on auth pages)
+  1512→- Every external integration behind a typed client in src/lib/integrations/
+  1513→- Webhook-first for all inbound integrations
+  1514→- Domain events emitted to an events table for every significant action
+  1515→
+  1516→SCOPE RULES:
+  1517→- Read existing code before creating new files. Do not create parallel versions.
+  1518→- Do NOT create a monorepo. Do NOT use Turborepo. ONE package.json. ONE next.config.ts.
+  1519→- Do NOT commit secrets (.env, API keys, tokens).
+  1520→- Stage files explicitly (git add <specific files>). Never git add .
+  1521→- Verify the build passes (npm run build) before committing.
+  1522→- If the build fails, fix the error and re-verify. Do not commit on a red build.
+  1523→
+  1524→TASKS (in order):
+  1525→
+  1526→1. Initialize Next.js 15 App Router project with TypeScript strict, Tailwind CSS, ESLint.
+  1527→   - Install: @clerk/nextjs, drizzle-orm, drizzle-kit, @neondatabase/serverless, ai, @ai-sdk/openai, zod, lucide-react, class-variance-authority, clsx, tailwind-merge
+  1528→   - Install shadcn/ui: button, card, input, label, select, badge, dialog, dropdown-menu, table, tabs, toast, separator, avatar, sheet
+  1529→
+  1530→2. Create the folder structure:
+  1531→   src/app/(marketing)/ — landing page placeholder
+  1532→   src/app/(marketing)/login/page.tsx — Clerk <SignIn />
+  1533→   src/app/(marketing)/signup/page.tsx — Clerk <SignUp />
+  1534→   src/app/(app)/layout.tsx — sidebar + header (protected)
+  1535→   src/app/(app)/onboarding/page.tsx — placeholder
+  1536→   src/app/(app)/dashboard/leads/page.tsx — placeholder
+  1537→   src/app/(app)/dashboard/website/page.tsx — placeholder
+  1538→   src/app/(app)/dashboard/settings/page.tsx — placeholder
+  1539→   src/app/(app)/dashboard/billing/page.tsx — placeholder
+  1540→   src/app/s/[slug]/page.tsx — public client website placeholder
+  1541→   src/app/api/webhooks/evolution/route.ts — placeholder (returns 200)
+  1542→   src/app/api/webhooks/payfast/route.ts — placeholder (returns 200)
+  1543→   src/app/api/v1/selftest/route.ts — placeholder
+  1544→   src/app/api/health/route.ts — returns { status: "ok" }
+  1545→   src/modules/tenants/ — service.ts, schema.ts, types.ts
+  1546→   src/modules/leads/ — service.ts, schema.ts, types.ts
+  1547→   src/modules/websites/ — service.ts, schema.ts, types.ts
+  1548→   src/modules/billing/ — service.ts, schema.ts, types.ts
+  1549→   src/modules/notifications/ — service.ts, types.ts
+  1550→   src/lib/db/index.ts — NULLABLE drizzle client
+  1551→   src/lib/db/schema.ts — all tables
+  1552→   src/lib/db/helpers.ts — tenant-scoped query helpers
+  1553→   src/lib/ai/provider.ts — Vercel AI SDK config
+  1554→   src/lib/integrations/evolution/client.ts — typed Evolution API client
+  1555→   src/lib/integrations/payfast/client.ts — typed PayFast client
+  1556→   src/lib/integrations/email/client.ts — sendEmailSafe() returns null if unconfigured
+  1557→   src/lib/events/emitter.ts — domain event emitter
+  1558→   src/shared/constants/index.ts — PLANS, INDUSTRIES, LEAD_STATUSES
+  1559→   src/shared/validators/index.ts — shared Zod schemas
+  1560→   src/middleware.ts — Clerk route protection
+  1561→
+  1562→3. Create the Drizzle schema in src/lib/db/schema.ts with these tables:
+  1563→   - tenants (id uuid PK, name, slug unique, industry, services text, logo_url, primary_color, whatsapp_number, whatsapp_connected bool, evolution_instance_id, plan, trial_ends_at, created_at, updated_at)
+  1564→   - users (id uuid PK, tenant_id FK→tenants, clerk_id varchar unique indexed, name, email, role, created_at)
+  1565→   - leads (id uuid PK, tenant_id FK→tenants indexed, name, phone, email, service_needed, message, source, ai_score int, ai_temperature, ai_reason, status default 'new', whatsapp_sent bool, owner_notified bool, consent_given bool, created_at, updated_at)
+  1566→   - websites (id uuid PK, tenant_id FK→tenants, template, hero_headline, hero_subtext, about_text, services jsonb, faq jsonb, custom_domain, published bool, created_at, updated_at)
+  1567→   - whatsapp_messages (id uuid PK, tenant_id FK→tenants, lead_id FK→leads nullable, direction, phone_number, content, message_type, status, evolution_message_id, created_at)
+  1568→   - subscriptions (id uuid PK, tenant_id FK→tenants, payfast_subscription_id, plan, amount_zar int, status default 'trial', current_period_start, current_period_end, cancelled_at, created_at)
+  1569→   - events (id uuid PK, tenant_id FK→tenants, event_type, payload jsonb, created_at)
+  1570→   
+  1571→   Use pgTable, uuid with defaultRandom(), proper relations, indexes on tenant_id.
+  1572→
+  1573→4. Create the NULLABLE database client in src/lib/db/index.ts:
+  1574→   export const db = process.env.DATABASE_URL ? drizzle(neon(process.env.DATABASE_URL), { schema }) : null;
+  1575→   Services must guard: if (!db) throw new Error('DATABASE_NOT_CONFIGURED');
+  1576→
+  1577→5. Create Clerk middleware in src/middleware.ts:
+  1578→   - Protect: /dashboard(.*)  /onboarding(.*)  /settings(.*)
+  1579→   - Public: /, /login, /signup, /pricing, /s/(.*), /api/webhooks/(.*), /api/health, /api/v1/selftest
+  1580→
+  1581→6. Create the root layout with ClerkProvider.
+  1582→   Create login page with <SignIn routing="path" path="/login" afterSignInUrl="/onboarding" />
+  1583→   Create signup page with <SignUp routing="path" path="/signup" afterSignUpUrl="/onboarding" />
+  1584→
+  1585→7. Create the (app) layout with a sidebar (nav: Dashboard, Leads, Website, Settings, Billing) and header (org name + Clerk <UserButton />).
+  1586→
+  1587→8. Create .env.example with:
+  1588→   DATABASE_URL=
+  1589→   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+  1590→   CLERK_SECRET_KEY=
+  1591→   PAYFAST_MERCHANT_ID=
+  1592→   PAYFAST_MERCHANT_KEY=
+  1593→   PAYFAST_PASSPHRASE=
+  1594→   EVOLUTION_API_URL=
+  1595→   EVOLUTION_API_KEY=
+  1596→   OPENAI_API_KEY=
+  1597→
+  1598→9. Create drizzle.config.ts pointing to DATABASE_URL.
+  1599→
+  1600→10. Create playwright.config.ts that supports BASE_URL env var for production testing.
+  1601→
+  1602→11. Create .github/workflows/keep-render-warm.yml (cron every 10 min, ping EVOLUTION_API_URL).
+  1603→
+  1604→12. Create src/app/api/v1/selftest/route.ts that checks: db connection, Clerk config presence, Evolution config presence, PayFast config presence. Returns structured JSON result. Does NOT require real credentials — just checks if they're configured.
+  1605→
+  1606→13. Create src/app/api/health/route.ts returning { status: "ok", timestamp }.
+  1607→
+  1608→14. Run npm run build. It MUST pass with zero environment variables set. Fix any errors.
+  1609→
+  1610→15. Commit with message: "feat: Phase 0 scaffold — Next.js + Clerk + Drizzle + modular architecture"
+  1611→
+  1612→REPORT BACK:
+  1613→- What you changed (files + summary)
+  1614→- Build result (green/red)
+  1615→- New commit hash
+  1616→- What to verify manually
+  1617→```
+  1618→
+  1619→---
+  1620→
+  1621→## What Changed vs. My Original Prompt
+  1622→
+  1623→| Before (Wrong) | After (Correct) |
+  1624→|----------------|-----------------|
+  1625→| Turborepo monorepo | Single repo, single package.json |
+  1626→| packages/db, packages/ai, packages/shared | src/modules/, src/lib/, src/shared/ |
+  1627→| Paystack | PayFast |
+  1628→| No build resilience rules | Nullable db, force-dynamic, zero-env build |
+  1629→| No selftest endpoint | /api/v1/selftest mandatory |
+  1630→| No Playwright config | playwright.config.ts with BASE_URL support |
+  1631→| No GitHub Actions wake-up | keep-render-warm.yml |
+  1632→| No domain events | events table + emitter |
+  1633→| No vibe coder prompt template | Scoped prompt with SCOPE RULES + REPORT BACK |
+  1634→| Email as primary | Email optional, WhatsApp primary |
+  1635→
+  1636→---
+  1637→
+  1638→## Today's Tasks
+  1639→
+  1640→**1. Delete any repo you already created from my old prompt.** If you haven't started yet, great — skip this. If you did, delete it. We start clean with the corrected architecture.
+  1641→
+  1642→**2. Create a fresh GitHub repo: `nahalabs-platform` (private). Clone it. Open in Cursor.**
+  1643→
+  1644→**3. Paste the corrected Phase 0 prompt above into Cursor Composer (Cmd+I). Let it run. When it finishes, run `npm run build` yourself. It must pass with zero env vars. Reply "Phase 0 green" when it does.**
+  1645→
+  1646→---
+  1647→
+  1648→*The architecture is the architecture. I deviated. That's fixed now. Every future prompt will follow your v5.0 standard exactly.* 🚀

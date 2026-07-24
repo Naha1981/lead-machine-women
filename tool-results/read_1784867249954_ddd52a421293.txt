@@ -1,0 +1,751 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useRef, useState } from "react";
+     4→import { motion, AnimatePresence } from "framer-motion";
+     5→import { toast } from "sonner";
+     6→import {
+     7→  ArrowLeft,
+     8→  ArrowRight,
+     9→  Check,
+    10→  CheckCircle2,
+    11→  ExternalLink,
+    12→  Globe,
+    13→  Loader2,
+    14→  MessageCircle,
+    15→  Palette,
+    16→  RefreshCw,
+    17→  Rocket,
+    18→  Sparkles,
+    19→  Wand2,
+    20→} from "lucide-react";
+    21→
+    22→import { Button } from "@/components/ui/button";
+    23→import { Card, CardContent } from "@/components/ui/card";
+    24→import { Input } from "@/components/ui/input";
+    25→import { Label } from "@/components/ui/label";
+    26→import { Textarea } from "@/components/ui/textarea";
+    27→import {
+    28→  Select,
+    29→  SelectContent,
+    30→  SelectItem,
+    31→  SelectTrigger,
+    32→  SelectValue,
+    33→} from "@/components/ui/select";
+    34→import { cn } from "@/lib/utils";
+    35→import { useAppStore } from "@/store/app-store";
+    36→import { apiClient } from "@/lib/api-client";
+    37→import {
+    38→  INDUSTRIES,
+    39→  INDUSTRY_PRESETS,
+    40→  PRIMARY_COLOR_DEFAULT,
+    41→  TEMPLATES,
+    42→} from "@/lib/constants";
+    43→import type { Org, Website } from "@/types";
+    44→
+    45→const COLOR_PALETTE = [
+    46→  { name: "Emerald", value: "#059669" },
+    47→  { name: "Teal", value: "#0d9488" },
+    48→  { name: "Orange", value: "#ea580c" },
+    49→  { name: "Rose", value: "#e11d48" },
+    50→  { name: "Violet", value: "#7c3aed" },
+    51→  { name: "Amber", value: "#d97706" },
+    52→];
+    53→
+    54→const STEPS = [
+    55→  { id: 1, label: "Business" },
+    56→  { id: 2, label: "Style" },
+    57→  { id: 3, label: "AI Build" },
+    58→  { id: 4, label: "Live" },
+    59→];
+    60→
+    61→const LOADING_MESSAGES = [
+    62→  "Crafting your headline...",
+    63→  "Writing your services...",
+    64→  "Preparing FAQs...",
+    65→  "Polishing your brand voice...",
+    66→  "Adding the final touches...",
+    67→];
+    68→
+    69→const CONFETTI = ["🎉", "✨", "🚀", "💚", "⭐", "🎊"];
+    70→
+    71→export default function OnboardingView() {
+    72→  const user = useAppStore((s) => s.user);
+    73→  const org = useAppStore((s) => s.org);
+    74→  const navigate = useAppStore((s) => s.navigate);
+    75→  const openPublicSite = useAppStore((s) => s.openPublicSite);
+    76→  const setSession = useAppStore((s) => s.setSession);
+    77→
+    78→  const [step, setStep] = useState(1);
+    79→  const [businessName, setBusinessName] = useState("");
+    80→  const [industry, setIndustry] = useState("");
+    81→  const [services, setServices] = useState("");
+    82→  const [whatsappNumber, setWhatsappNumber] = useState("");
+    83→  const [template, setTemplate] = useState<string>("");
+    84→  const [primaryColor, setPrimaryColor] = useState<string>(PRIMARY_COLOR_DEFAULT);
+    85→
+    86→  const [generatedWebsite, setGeneratedWebsite] = useState<Website | null>(null);
+    87→  const [generating, setGenerating] = useState(false);
+    88→  const [creatingOrg, setCreatingOrg] = useState(false);
+    89→  const [createdOrg, setCreatedOrg] = useState<Org | null>(null);
+    90→
+    91→  const generateFiredRef = useRef(false);
+    92→  const createOrgFiredRef = useRef(false);
+    93→  const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
+    94→
+    95→  // Edge case: user already has an org -> bounce to dashboard
+    96→  useEffect(() => {
+    97→    if (org) {
+    98→      navigate("dashboard");
+    99→    }
+   100→  }, [org, navigate]);
+   101→
+   102→  // Auto-select template + color when industry changes
+   103→  useEffect(() => {
+   104→    if (!industry) return;
+   105→    const ind = INDUSTRIES.find((i) => i.value === industry);
+   106→    if (ind) setTemplate(ind.template);
+   107→    const preset = INDUSTRY_PRESETS[industry];
+   108→    if (preset) setPrimaryColor(preset.color);
+   109→  }, [industry]);
+   110→
+   111→  // Auto-generate website when entering step 3 (only once per visit)
+   112→  useEffect(() => {
+   113→    if (step !== 3) return;
+   114→    if (generateFiredRef.current || generatedWebsite) return;
+   115→    generateFiredRef.current = true;
+   116→    void runGenerate();
+   117→  }, [step]);
+   118→
+   119→  // Rotate loading messages while generating
+   120→  useEffect(() => {
+   121→    if (!generating) return;
+   122→    let i = 0;
+   123→    setLoadingMsg(LOADING_MESSAGES[0]);
+   124→    const interval = setInterval(() => {
+   125→      i = (i + 1) % LOADING_MESSAGES.length;
+   126→      setLoadingMsg(LOADING_MESSAGES[i]);
+   127→    }, 2200);
+   128→    return () => clearInterval(interval);
+   129→  }, [generating]);
+   130→
+   131→  // Create org when entering step 4 (only once per visit)
+   132→  useEffect(() => {
+   133→    if (step !== 4) return;
+   134→    if (createOrgFiredRef.current || createdOrg) return;
+   135→    createOrgFiredRef.current = true;
+   136→    void runCreateOrg();
+   137→  }, [step]);
+   138→
+   139→  async function runGenerate() {
+   140→    setGenerating(true);
+   141→    try {
+   142→      const { website } = await apiClient.generateWebsite({
+   143→        businessName: businessName.trim(),
+   144→        industry,
+   145→        services: services.trim(),
+   146→        template,
+   147→      });
+   148→      setGeneratedWebsite(website);
+   149→      toast.success("Your website copy is ready!");
+   150→    } catch (e) {
+   151→      const msg = e instanceof Error ? e.message : "Failed to generate website";
+   152→      toast.error(msg);
+   153→      generateFiredRef.current = false; // allow retry via Regenerate
+   154→    } finally {
+   155→      setGenerating(false);
+   156→    }
+   157→  }
+   158→
+   159→  async function runCreateOrg() {
+   160→    setCreatingOrg(true);
+   161→    try {
+   162→      const { org: newOrg } = await apiClient.createOrg({
+   163→        name: businessName.trim(),
+   164→        industry,
+   165→        services: services.trim(),
+   166→        whatsappNumber: whatsappNumber.trim() || undefined,
+   167→        primaryColor,
+   168→      });
+   169→      setCreatedOrg(newOrg);
+   170→      toast.success("Your business is live! 🎉");
+   171→    } catch (e) {
+   172→      const msg = e instanceof Error ? e.message : "Failed to create your business";
+   173→      toast.error(msg);
+   174→      createOrgFiredRef.current = false;
+   175→    } finally {
+   176→      setCreatingOrg(false);
+   177→    }
+   178→  }
+   179→
+   180→  const step1Valid = Boolean(businessName.trim() && industry && services.trim());
+   181→  const step2Valid = Boolean(template && primaryColor);
+   182→  const step3Valid = Boolean(generatedWebsite);
+   183→
+   184→  function handleNext() {
+   185→    if (step === 1 && !step1Valid) {
+   186→      toast.error("Please fill in all required fields");
+   187→      return;
+   188→    }
+   189→    if (step === 2 && !step2Valid) {
+   190→      toast.error("Please pick a template style");
+   191→      return;
+   192→    }
+   193→    if (step === 3 && !step3Valid) {
+   194→      toast.error("Please wait for the AI to finish writing your site");
+   195→      return;
+   196→    }
+   197→    if (step < 4) setStep(step + 1);
+   198→  }
+   199→
+   200→  function handleBack() {
+   201→    if (step > 1) setStep(step - 1);
+   202→  }
+   203→
+   204→  async function handleAction(action: "dashboard" | "preview" | "whatsapp") {
+   205→    try {
+   206→      // Refresh session — setSession will auto-route to dashboard (view is currently "onboarding").
+   207→      // We then override with the specific destination below.
+   208→      const { user: freshUser, org: freshOrg } = await apiClient.me();
+   209→      setSession(freshUser, freshOrg);
+   210→
+   211→      if (action === "dashboard") {
+   212→        navigate("dashboard");
+   213→      } else if (action === "preview") {
+   214→        const slug = freshOrg?.slug || createdOrg?.slug;
+   215→        if (slug) openPublicSite(slug);
+   216→        else navigate("dashboard");
+   217→      } else if (action === "whatsapp") {
+   218→        navigate("dashboard", { tab: "settings" });
+   219→      }
+   220→    } catch (e) {
+   221→      const msg = e instanceof Error ? e.message : "Something went wrong";
+   222→      toast.error(msg);
+   223→    }
+   224→  }
+   225→
+   226→  // If the user already has an org, we're redirecting
+   227→  if (org) return null;
+   228→
+   229→  const progressPct = ((step - 1) / (STEPS.length - 1)) * 100;
+   230→  const industryPreset = industry ? INDUSTRY_PRESETS[industry] : null;
+   231→
+   232→  return (
+   233→    <div className="min-h-screen bg-gradient-to-b from-emerald-50/60 via-background to-background">
+   234→      {/* Top progress bar */}
+   235→      <header className="sticky top-0 z-20 border-b bg-white/85 backdrop-blur">
+   236→        <div className="mx-auto max-w-2xl px-4 py-4">
+   237→          <div className="flex items-center justify-between">
+   238→            {STEPS.map((s, idx) => (
+   239→              <div key={s.id} className="flex items-center flex-1 last:flex-none">
+   240→                <div className="flex items-center gap-2">
+   241→                  <div
+   242→                    className={cn(
+   243→                      "flex size-8 items-center justify-center rounded-full text-xs font-semibold transition-all",
+   244→                      step > s.id
+   245→                        ? "bg-emerald-600 text-white"
+   246→                        : step === s.id
+   247→                        ? "bg-emerald-600 text-white ring-4 ring-emerald-100"
+   248→                        : "bg-muted text-muted-foreground"
+   249→                    )}
+   250→                  >
+   251→                    {step > s.id ? <Check className="size-4" /> : s.id}
+   252→                  </div>
+   253→                  <span
+   254→                    className={cn(
+   255→                      "text-xs hidden sm:inline transition-colors",
+   256→                      step >= s.id
+   257→                        ? "text-emerald-700 font-medium"
+   258→                        : "text-muted-foreground"
+   259→                    )}
+   260→                  >
+   261→                    {s.label}
+   262→                  </span>
+   263→                </div>
+   264→                {idx < STEPS.length - 1 && (
+   265→                  <div className="flex-1 h-0.5 mx-2 sm:mx-3 rounded-full bg-muted overflow-hidden">
+   266→                    <div
+   267→                      className="h-full bg-emerald-600 transition-all duration-500"
+   268→                      style={{ width: step > s.id ? "100%" : "0%" }}
+   269→                    />
+   270→                  </div>
+   271→                )}
+   272→              </div>
+   273→            ))}
+   274→          </div>
+   275→        </div>
+   276→      </header>
+   277→
+   278→      {/* Main content */}
+   279→      <main className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+   280→        <Card className="shadow-sm border-emerald-100/60">
+   281→          <CardContent className="p-6 sm:p-8 min-h-[420px]">
+   282→            <AnimatePresence mode="wait">
+   283→              {/* STEP 1 — Business */}
+   284→              {step === 1 && (
+   285→                <motion.div
+   286→                  key="step1"
+   287→                  initial={{ opacity: 0, x: 20 }}
+   288→                  animate={{ opacity: 1, x: 0 }}
+   289→                  exit={{ opacity: 0, x: -20 }}
+   290→                  transition={{ duration: 0.25 }}
+   291→                  className="space-y-5"
+   292→                >
+   293→                  <div>
+   294→                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 mb-3">
+   295→                      <Sparkles className="size-3.5" /> Step 1 of 4
+   296→                    </div>
+   297→                    <h2 className="text-2xl font-bold tracking-tight">Tell us about your business</h2>
+   298→                    <p className="text-sm text-muted-foreground mt-1">
+   299→                      This powers your website copy, lead qualification, and WhatsApp alerts.
+   300→                    </p>
+   301→                  </div>
+   302→
+   303→                  <div className="space-y-2">
+   304→                    <Label htmlFor="businessName">
+   305→                      Business name <span className="text-rose-500">*</span>
+   306→                    </Label>
+   307→                    <Input
+   308→                      id="businessName"
+   309→                      value={businessName}
+   310→                      onChange={(e) => setBusinessName(e.target.value)}
+   311→                      placeholder="MVR Law"
+   312→                    />
+   313→                  </div>
+   314→
+   315→                  <div className="space-y-2">
+   316→                    <Label htmlFor="industry">
+   317→                      Industry <span className="text-rose-500">*</span>
+   318→                    </Label>
+   319→                    <Select value={industry} onValueChange={setIndustry}>
+   320→                      <SelectTrigger id="industry" className="w-full">
+   321→                        <SelectValue placeholder="Select your industry" />
+   322→                      </SelectTrigger>
+   323→                      <SelectContent>
+   324→                        {INDUSTRIES.map((i) => (
+   325→                          <SelectItem key={i.value} value={i.value}>
+   326→                            <span className="mr-1.5">{INDUSTRY_PRESETS[i.value]?.emoji ?? "✨"}</span>
+   327→                            {i.label}
+   328→                          </SelectItem>
+   329→                        ))}
+   330→                      </SelectContent>
+   331→                    </Select>
+   332→                  </div>
+   333→
+   334→                  <div className="space-y-2">
+   335→                    <Label htmlFor="services">
+   336→                      Services you offer <span className="text-rose-500">*</span>
+   337→                    </Label>
+   338→                    <Textarea
+   339→                      id="services"
+   340→                      value={services}
+   341→                      onChange={(e) => setServices(e.target.value)}
+   342→                      placeholder="e.g. Company registrations, Contract drafting, Litigation, Legal advisory"
+   343→                      className="min-h-24"
+   344→                    />
+   345→                    <p className="text-xs text-muted-foreground">
+   346→                      Comma-separated or one per line. The AI uses these to write your website.
+   347→                    </p>
+   348→                  </div>
+   349→
+   350→                  <div className="space-y-2">
+   351→                    <Label htmlFor="whatsapp">
+   352→                      WhatsApp number for lead notifications{" "}
+   353→                      <span className="text-muted-foreground font-normal">(optional)</span>
+   354→                    </Label>
+   355→                    <Input
+   356→                      id="whatsapp"
+   357→                      value={whatsappNumber}
+   358→                      onChange={(e) => setWhatsappNumber(e.target.value)}
+   359→                      placeholder="+27 82 123 4567"
+   360→                      inputMode="tel"
+   361→                    />
+   362→                    <p className="text-xs text-muted-foreground">
+   363→                      We&apos;ll ping you the moment a hot lead lands. You can connect WhatsApp later.
+   364→                    </p>
+   365→                  </div>
+   366→                </motion.div>
+   367→              )}
+   368→
+   369→              {/* STEP 2 — Style */}
+   370→              {step === 2 && (
+   371→                <motion.div
+   372→                  key="step2"
+   373→                  initial={{ opacity: 0, x: 20 }}
+   374→                  animate={{ opacity: 1, x: 0 }}
+   375→                  exit={{ opacity: 0, x: -20 }}
+   376→                  transition={{ duration: 0.25 }}
+   377→                  className="space-y-5"
+   378→                >
+   379→                  <div>
+   380→                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 mb-3">
+   381→                      <Palette className="size-3.5" /> Step 2 of 4
+   382→                    </div>
+   383→                    <h2 className="text-2xl font-bold tracking-tight">Pick your style</h2>
+   384→                    <p className="text-sm text-muted-foreground mt-1">
+   385→                      Choose a template and brand color. You can change these anytime.
+   386→                    </p>
+   387→                  </div>
+   388→
+   389→                  <div>
+   390→                    <Label className="mb-2 block">Template</Label>
+   391→                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   392→                      {TEMPLATES.map((t) => {
+   393→                        const selected = template === t.value;
+   394→                        return (
+   395→                          <button
+   396→                            key={t.value}
+   397→                            type="button"
+   398→                            onClick={() => setTemplate(t.value)}
+   399→                            className={cn(
+   400→                              "text-left rounded-xl border p-4 transition-all relative",
+   401→                              selected
+   402→                                ? "border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20"
+   403→                                : "border-border hover:border-emerald-300 hover:bg-emerald-50/30"
+   404→                            )}
+   405→                          >
+   406→                            {selected && (
+   407→                              <div className="absolute top-3 right-3 flex size-5 items-center justify-center rounded-full bg-emerald-600 text-white">
+   408→                                <Check className="size-3.5" />
+   409→                              </div>
+   410→                            )}
+   411→                            <div className="font-semibold text-sm">{t.label}</div>
+   412→                            <div className="text-xs text-muted-foreground mt-1">{t.description}</div>
+   413→                          </button>
+   414→                        );
+   415→                      })}
+   416→                    </div>
+   417→                  </div>
+   418→
+   419→                  <div>
+   420→                    <Label className="mb-2 block">Brand color</Label>
+   421→                    <div className="flex flex-wrap items-center gap-3">
+   422→                      {COLOR_PALETTE.map((c) => {
+   423→                        const selected = primaryColor.toLowerCase() === c.value.toLowerCase();
+   424→                        return (
+   425→                          <button
+   426→                            key={c.value}
+   427→                            type="button"
+   428→                            onClick={() => setPrimaryColor(c.value)}
+   429→                            aria-label={c.name}
+   430→                            className={cn(
+   431→                              "size-10 rounded-full ring-2 ring-offset-2 ring-offset-background transition-all flex items-center justify-center",
+   432→                              selected ? "ring-foreground scale-110" : "ring-transparent hover:scale-105"
+   433→                            )}
+   434→                            style={{ backgroundColor: c.value }}
+   435→                          >
+   436→                            {selected && <Check className="size-4 text-white" />}
+   437→                          </button>
+   438→                        );
+   439→                      })}
+   440→                      {industryPreset && (
+   441→                        <span className="text-xs text-muted-foreground ml-1">
+   442→                          Suggested for {INDUSTRIES.find((i) => i.value === industry)?.label}
+   443→                        </span>
+   444→                      )}
+   445→                    </div>
+   446→                  </div>
+   447→
+   448→                  {/* Live preview */}
+   449→                  <div className="rounded-xl border overflow-hidden">
+   450→                    <div className="px-3 py-2 text-xs text-muted-foreground bg-muted/50 flex items-center gap-2">
+   451→                      <Globe className="size-3.5" /> Live preview
+   452→                    </div>
+   453→                    <div className="p-5">
+   454→                      <div
+   455→                        className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold text-white"
+   456→                        style={{ backgroundColor: primaryColor }}
+   457→                      >
+   458→                        {industryPreset?.emoji ?? "✨"} {businessName || "Your Business"}
+   459→                      </div>
+   460→                      <h3 className="mt-4 text-xl font-bold tracking-tight">
+   461→                        {businessName ? `${businessName} — working for you.` : "Your headline appears here."}
+   462→                      </h3>
+   463→                      <p className="text-sm text-muted-foreground mt-2 max-w-md">
+   464→                        Trusted {INDUSTRIES.find((i) => i.value === industry)?.label ?? "services"} for South
+   465→                        African businesses. Get a quote in 24 hours.
+   466→                      </p>
+   467→                      <button
+   468→                        type="button"
+   469→                        className="mt-4 rounded-md px-4 py-2 text-xs font-semibold text-white"
+   470→                        style={{ backgroundColor: primaryColor }}
+   471→                      >
+   472→                        Get a Free Quote
+   473→                      </button>
+   474→                    </div>
+   475→                  </div>
+   476→                </motion.div>
+   477→              )}
+   478→
+   479→              {/* STEP 3 — AI Build */}
+   480→              {step === 3 && (
+   481→                <motion.div
+   482→                  key="step3"
+   483→                  initial={{ opacity: 0, x: 20 }}
+   484→                  animate={{ opacity: 1, x: 0 }}
+   485→                  exit={{ opacity: 0, x: -20 }}
+   486→                  transition={{ duration: 0.25 }}
+   487→                  className="space-y-5"
+   488→                >
+   489→                  <div>
+   490→                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 mb-3">
+   491→                      <Wand2 className="size-3.5" /> Step 3 of 4
+   492→                    </div>
+   493→                    <h2 className="text-2xl font-bold tracking-tight">AI builds your website</h2>
+   494→                    <p className="text-sm text-muted-foreground mt-1">
+   495→                      We&apos;re writing copy tailored to {businessName || "your business"}.
+   496→                    </p>
+   497→                  </div>
+   498→
+   499→                  {generating && (
+   500→                    <div className="rounded-xl border bg-emerald-50/40 p-8 text-center">
+   501→                      <div className="relative mx-auto mb-4 flex size-14 items-center justify-center">
+   502→                        <motion.div
+   503→                          className="absolute inset-0 rounded-full bg-emerald-200/50"
+   504→                          animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0, 0.6] }}
+   505→                          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+   506→                        />
+   507→                        <Sparkles className="size-7 text-emerald-600" />
+   508→                      </div>
+   509→                      <div className="font-semibold text-emerald-800">AI is writing your website copy... ✨</div>
+   510→                      <AnimatePresence mode="wait">
+   511→                        <motion.div
+   512→                          key={loadingMsg}
+   513→                          initial={{ opacity: 0, y: 6 }}
+   514→                          animate={{ opacity: 1, y: 0 }}
+   515→                          exit={{ opacity: 0, y: -6 }}
+   516→                          transition={{ duration: 0.3 }}
+   517→                          className="text-sm text-emerald-700 mt-2 flex items-center justify-center gap-2"
+   518→                        >
+   519→                          <Loader2 className="size-3.5 animate-spin" />
+   520→                          {loadingMsg}
+   521→                        </motion.div>
+   522→                      </AnimatePresence>
+   523→                    </div>
+   524→                  )}
+   525→
+   526→                  {!generating && generatedWebsite && (
+   527→                    <div className="space-y-4">
+   528→                      <div className="rounded-xl border overflow-hidden">
+   529→                        <div className="px-4 py-2.5 text-xs font-medium text-muted-foreground bg-muted/50 flex items-center justify-between">
+   530→                          <span>Preview</span>
+   531→                          <Button
+   532→                            type="button"
+   533→                            variant="ghost"
+   534→                            size="sm"
+   535→                            className="h-7 text-xs"
+   536→                            onClick={() => {
+   537→                              generateFiredRef.current = true;
+   538→                              void runGenerate();
+   539→                            }}
+   540→                          >
+   541→                            <RefreshCw className="size-3.5" /> Regenerate
+   542→                          </Button>
+   543→                        </div>
+   544→                        <div className="p-5 space-y-4">
+   545→                          {generatedWebsite.heroHeadline && (
+   546→                            <div>
+   547→                              <div className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+   548→                                Headline
+   549→                              </div>
+   550→                              <h3 className="mt-1 text-lg font-bold tracking-tight">
+   551→                                {generatedWebsite.heroHeadline}
+   552→                              </h3>
+   553→                              {generatedWebsite.heroSubtext && (
+   554→                                <p className="text-sm text-muted-foreground mt-1.5">
+   555→                                  {generatedWebsite.heroSubtext}
+   556→                                </p>
+   557→                              )}
+   558→                            </div>
+   559→                          )}
+   560→                          {generatedWebsite.aboutText && (
+   561→                            <div>
+   562→                              <div className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+   563→                                About
+   564→                              </div>
+   565→                              <p className="mt-1 text-sm leading-relaxed">
+   566→                                {generatedWebsite.aboutText}
+   567→                              </p>
+   568→                            </div>
+   569→                          )}
+   570→                          {generatedWebsite.services?.length > 0 && (
+   571→                            <div>
+   572→                              <div className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+   573→                                Services
+   574→                              </div>
+   575→                              <ul className="mt-2 space-y-2">
+   576→                                {generatedWebsite.services.slice(0, 3).map((s, i) => (
+   577→                                  <li key={i} className="flex items-start gap-2.5">
+   578→                                    <div
+   579→                                      className="mt-1 size-1.5 shrink-0 rounded-full"
+   580→                                      style={{ backgroundColor: primaryColor }}
+   581→                                    />
+   582→                                    <div>
+   583→                                      <div className="text-sm font-medium">{s.name}</div>
+   584→                                      <div className="text-xs text-muted-foreground">{s.description}</div>
+   585→                                    </div>
+   586→                                  </li>
+   587→                                ))}
+   588→                              </ul>
+   589→                            </div>
+   590→                          )}
+   591→                        </div>
+   592→                      </div>
+   593→                    </div>
+   594→                  )}
+   595→
+   596→                  {!generating && !generatedWebsite && (
+   597→                    <div className="rounded-xl border border-dashed p-8 text-center">
+   598→                      <p className="text-sm text-muted-foreground">
+   599→                        Something went wrong. Try again?
+   600→                      </p>
+   601→                      <Button
+   602→                        type="button"
+   603→                        variant="outline"
+   604→                        size="sm"
+   605→                        className="mt-3"
+   606→                        onClick={() => {
+   607→                          generateFiredRef.current = true;
+   608→                          void runGenerate();
+   609→                        }}
+   610→                      >
+   611→                        <RefreshCw className="size-4" /> Retry
+   612→                      </Button>
+   613→                    </div>
+   614→                  )}
+   615→                </motion.div>
+   616→              )}
+   617→
+   618→              {/* STEP 4 — Live */}
+   619→              {step === 4 && (
+   620→                <motion.div
+   621→                  key="step4"
+   622→                  initial={{ opacity: 0, scale: 0.97 }}
+   623→                  animate={{ opacity: 1, scale: 1 }}
+   624→                  exit={{ opacity: 0, scale: 0.97 }}
+   625→                  transition={{ duration: 0.3 }}
+   626→                  className="space-y-6 relative"
+   627→                >
+   628→                  {/* Confetti burst */}
+   629→                  <div className="pointer-events-none absolute inset-x-0 -top-4 h-0 overflow-visible">
+   630→                    {CONFETTI.map((emoji, i) => (
+   631→                      <motion.span
+   632→                        key={i}
+   633→                        className="absolute text-xl"
+   634→                        style={{ left: `${12 + i * 14}%` }}
+   635→                        initial={{ y: -10, opacity: 0, scale: 0.5 }}
+   636→                        animate={{
+   637→                          y: [0, 120, 200],
+   638→                          opacity: [1, 1, 0],
+   639→                          scale: [1, 1.2, 0.8],
+   640→                          rotate: [0, 180, 360],
+   641→                        }}
+   642→                        transition={{ duration: 2.2, delay: i * 0.12, ease: "easeOut" }}
+   643→                      >
+   644→                        {emoji}
+   645→                      </motion.span>
+   646→                    ))}
+   647→                  </div>
+   648→
+   649→                  <div className="text-center pt-4">
+   650→                    <motion.div
+   651→                      initial={{ scale: 0 }}
+   652→                      animate={{ scale: 1 }}
+   653→                      transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+   654→                      className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-emerald-100"
+   655→                    >
+   656→                      <CheckCircle2 className="size-9 text-emerald-600" />
+   657→                    </motion.div>
+   658→                    <h2 className="text-2xl font-bold tracking-tight">Your website is ready 🎉</h2>
+   659→                    <p className="text-sm text-muted-foreground mt-1">
+   660→                      We&apos;ve published your starter site. Time to start collecting leads.
+   661→                    </p>
+   662→                  </div>
+   663→
+   664→                  {/* URL preview */}
+   665→                  <div className="rounded-xl border bg-muted/40 p-4">
+   666→                    <div className="text-xs font-medium text-muted-foreground mb-1.5">
+   667→                      Your public URL
+   668→                    </div>
+   669→                    {creatingOrg ? (
+   670→                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+   671→                        <Loader2 className="size-4 animate-spin" /> Reserving your URL...
+   672→                      </div>
+   673→                    ) : createdOrg ? (
+   674→                      <div className="flex items-center gap-2">
+   675→                        <Globe className="size-4 text-emerald-600 shrink-0" />
+   676→                        <code className="text-sm font-semibold text-emerald-700 truncate">
+   677→                          leadmachine.app/s/{createdOrg.slug}
+   678→                        </code>
+   679→                      </div>
+   680→                    ) : (
+   681→                      <div className="text-sm text-muted-foreground">Preparing your URL...</div>
+   682→                    )}
+   683→                  </div>
+   684→
+   685→                  {/* Quick actions */}
+   686→                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   687→                    <Button
+   688→                      onClick={() => handleAction("dashboard")}
+   689→                      className="bg-emerald-600 hover:bg-emerald-700 text-white h-auto py-3 flex flex-col items-center gap-1.5"
+   690→                    >
+   691→                      <Rocket className="size-5" />
+   692→                      <span className="text-sm font-semibold">Go to Dashboard</span>
+   693→                    </Button>
+   694→                    <Button
+   695→                      variant="outline"
+   696→                      onClick={() => handleAction("preview")}
+   697→                      className="h-auto py-3 flex flex-col items-center gap-1.5 border-emerald-200 hover:bg-emerald-50"
+   698→                    >
+   699→                      <ExternalLink className="size-5 text-emerald-600" />
+   700→                      <span className="text-sm font-semibold">Preview my Website</span>
+   701→                    </Button>
+   702→                    <Button
+   703→                      variant="outline"
+   704→                      onClick={() => handleAction("whatsapp")}
+   705→                      className="h-auto py-3 flex flex-col items-center gap-1.5 border-emerald-200 hover:bg-emerald-50"
+   706→                    >
+   707→                      <MessageCircle className="size-5 text-emerald-600" />
+   708→                      <span className="text-sm font-semibold">Connect WhatsApp</span>
+   709→                    </Button>
+   710→                  </div>
+   711→
+   712→                  <p className="text-center text-xs text-muted-foreground">
+   713→                    Signed in as {user?.email}. Welcome to Lead Machine.
+   714→                  </p>
+   715→                </motion.div>
+   716→              )}
+   717→            </AnimatePresence>
+   718→          </CardContent>
+   719→        </Card>
+   720→
+   721→        {/* Nav buttons (hidden on step 4) */}
+   722→        {step < 4 && (
+   723→          <div className="mt-6 flex items-center justify-between">
+   724→            <Button
+   725→              variant="ghost"
+   726→              onClick={handleBack}
+   727→              disabled={step === 1 || generating}
+   728→              className="text-muted-foreground"
+   729→            >
+   730→              <ArrowLeft className="size-4" /> Back
+   731→            </Button>
+   732→            <Button
+   733→              onClick={handleNext}
+   734→              disabled={
+   735→                (step === 1 && !step1Valid) ||
+   736→                (step === 2 && !step2Valid) ||
+   737→                (step === 3 && !step3Valid) ||
+   738→                generating
+   739→              }
+   740→              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+   741→            >
+   742→              {step === 3 ? "Finish Setup" : "Next"}
+   743→              <ArrowRight className="size-4" />
+   744→            </Button>
+   745→          </div>
+   746→        )}
+   747→      </main>
+   748→    </div>
+   749→  );
+   750→}
+   751→
