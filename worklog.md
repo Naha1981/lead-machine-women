@@ -494,3 +494,42 @@ Stage Summary:
 - Graceful degradation: without OPENAI_API_KEY, AI endpoints return AI_NOT_CONFIGURED 503; lead submission still works (score: null); the app doesn't crash.
 - Middleware fix: /api/ai/chat is now PUBLIC (was incorrectly protected, blocking the chat widget on public sites).
 - STOPPED. Did NOT start Phase 5 (Evolution API WhatsApp).
+
+---
+Task ID: phase-5-evolution-whatsapp
+Agent: main
+Task: Phase 5 — real outbound WhatsApp via Evolution API with simulate fallback
+
+Work Log:
+- Audited: src/lib/whatsapp.ts (simulator: sendProspectConfirmation + sendOwnerNotification, logs to whatsapp_messages with status "sent" but never actually sends). Leads route calls both in try/catch. whatsapp_messages schema: orgId, leadId, direction, phoneNumber, content, messageType, status, createdAt. orgs.whatsappNumber + orgs.ownerPhone columns.
+- Wrote real keys to .env (gitignored, untracked): Neon DATABASE_URL, Clerk test keys, Evolution API URL + key + instance name, SIMULATE_WHATSAPP=true.
+- Curled live Evolution instance: https://lead-machine-my-evolution-api.onrender.com. API reachable (fetchInstances returns []). Instance "lead_machine_test" not yet created (human must create via manager + scan QR). Confirmed endpoints: POST /message/sendText/{instance} (body {number, text}), GET /instance/connectionState/{instance}.
+- Created src/lib/integrations/evolution/client.ts: typed Evolution client. Lazy env reads (never module load). isConfigured(), getConnectionStatus(), sendText() — all return typed results, NEVER throw. Phone normalization (SA 0XX → 27XXXXXXXXX).
+- Created src/modules/notifications/service.ts: sendLeadNotifications(org, lead). Builds owner notification (🔥/⚡/❄️ + score + reason + "reply fast" nudge) + prospect confirmation (thanks + ref + 2-hour promise). If Evolution configured AND SIMULATE_WHATSAPP !== 'true': sends via client.sendText, logs 'sent' or 'failed'. Else: logs 'simulated'. NEVER throws.
+- Updated src/app/api/leads/route.ts: replaced simulator calls with sendLeadNotifications(). Public POST unchanged. AI qualification unchanged.
+- Created src/app/api/webhooks/evolution/route.ts: stub for Phase 5.5 inbound. Logs payload + returns 200. Public.
+- Deleted src/lib/whatsapp.ts (old simulator — fully replaced by notifications service).
+- Updated .env.example: EVOLUTION_API_URL, EVOLUTION_GLOBAL_API_KEY, EVOLUTION_INSTANCE_NAME, SIMULATE_WHATSAPP=true (default safe).
+- Middleware: /api/webhooks/evolution is public (allowlist approach — only listed routes are protected).
+
+VERIFICATION:
+- bun run lint: 0 errors, 0 warnings.
+- bunx tsc --noEmit: 0 errors (source only).
+- Evolution client direct test:
+  - isConfigured(): true (env vars present)
+  - getConnectionStatus(): { configured: true, connected: false, state: "unknown" } (instance not created yet)
+  - sendText(): { ok: false, error: "The lead_machine_test instance does not exist" } — graceful, no crash
+  - Phone normalization: +27 82 123 4567 → 27821234567, 0821234567 → 27821234567 ✅
+- Simulate path (SIMULATE_WHATSAPP=true, PGlite dev):
+  - Lead submitted → 2 whatsapp_messages logged with status "simulated"
+  - Owner message: "📋 NEW LEAD for MVR Law..." (emoji 📋 because AI not configured — score null, graceful)
+  - Prospect message: "Hi Test 👋 Thanks for reaching out to MVR Law!..."
+  - Lead saved successfully. No crash.
+- Webhook endpoint: GET + POST → HTTP 200.
+- Selftest: whatsapp.evolutionApiUrl: true, whatsapp.simulate: true.
+
+Stage Summary:
+- Phase 5 COMPLETE. Real outbound WhatsApp via Evolution API is wired, with a safe simulate-by-default switch (SIMULATE_WHATSAPP=true). The app never crashes if Evolution is unconfigured or the instance isn't connected.
+- The old simulator (src/lib/whatsapp.ts) is deleted. The new notifications service is the single entry point for lead notifications.
+- The human must: (1) create the Evolution instance "lead_machine_test" via the manager, (2) scan the QR with their phone, (3) set SIMULATE_WHATSAPP=false in .env, (4) submit a test lead → confirm real WhatsApp messages land on their phone.
+- STOPPED. Did NOT start Phase 5.5 (inbound WhatsApp) or Phase 6 (PayFast/Playwright).
