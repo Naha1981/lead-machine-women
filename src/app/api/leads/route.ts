@@ -5,7 +5,7 @@ import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/ser
 import { getOrgBySlug } from "@/modules/orgs/service";
 import { createLead, updateLeadFlags, listLeadsForOrg } from "@/modules/leads/service";
 import { qualifyLead } from "@/lib/ai";
-import { sendProspectConfirmation, sendOwnerNotification } from "@/lib/whatsapp";
+import { sendLeadNotifications } from "@/modules/notifications/service";
 
 export const dynamic = "force-dynamic";
 
@@ -73,39 +73,32 @@ export async function POST(req: Request) {
       consentGiven: true,
     });
 
-    // 3) WhatsApp confirmation to prospect + notification to owner (simulated)
+    // 3) WhatsApp notifications (owner + prospect) via Evolution API or simulate.
+    // NEVER throws — failures are logged but don't break lead capture.
     let whatsappSent = false;
     let ownerNotified = false;
     try {
-      await sendProspectConfirmation({
-        orgId: org.id,
-        leadId: lead.id,
-        leadName: name,
-        leadPhone: phone,
-        businessName: org.name,
-      });
-      whatsappSent = true;
-    } catch (e) {
-      console.error("[sendProspectConfirmation]", e);
-    }
-    if (org.ownerPhone && aiScore !== null && aiTemperature) {
-      try {
-        await sendOwnerNotification({
-          orgId: org.id,
-          leadId: lead.id,
+      const notifResult = await sendLeadNotifications(
+        {
+          id: org.id,
+          name: org.name,
+          whatsappNumber: org.whatsappNumber,
           ownerPhone: org.ownerPhone,
-          leadName: name,
-          leadPhone: phone,
-          serviceNeeded: serviceNeeded || undefined,
-          score: aiScore,
-          temperature: aiTemperature,
-          reason: aiReason ?? "",
-          businessName: org.name,
-        });
-        ownerNotified = true;
-      } catch (e) {
-        console.error("[sendOwnerNotification]", e);
-      }
+        },
+        {
+          id: lead.id,
+          name: lead.name,
+          phone: lead.phone,
+          serviceNeeded: lead.serviceNeeded,
+          aiScore: lead.aiScore,
+          aiTemperature: lead.aiTemperature as "hot" | "warm" | "cold" | null,
+          aiReason: lead.aiReason,
+        }
+      );
+      whatsappSent = notifResult.prospectSent;
+      ownerNotified = notifResult.ownerSent;
+    } catch (e) {
+      console.error("[sendLeadNotifications]", e);
     }
 
     if (whatsappSent || ownerNotified) {
