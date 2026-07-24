@@ -414,3 +414,37 @@ Stage Summary:
 - /?site=slug redirects to /s/[slug] (canonical URL).
 - In production with Neon, /s/[slug] uses a direct server-side service call (as the spec requires). In dev with PGlite, there's a fallback to the internal API due to a known PGlite-in-RSC issue.
 - STOPPED. Did NOT start Phase 3b (dashboard tabs to real routes) or Phase 4 (Vercel AI SDK).
+
+---
+Task ID: clerk-keys-happy-path
+Agent: main
+Task: Wire real Clerk test keys + prove the authenticated happy path
+
+Work Log:
+- Confirmed .env was accidentally tracked in an earlier commit. Ran `git rm --cached .env` to untrack it (local file preserved). .gitignore already has `.env*` + `!.env.example`.
+- Wrote real Clerk test keys to .env via quoted heredoc (`cat > .env <<'ENVEOF'`) to preserve the trailing `$` in the publishable key. Verified byte-for-byte: both keys EXACT MATCH.
+- Restarted dev server. Confirmed in dev.log: "[Clerk]: Your application is running with your claimed keys." (NOT keyless mode). Selftest reports `clerk.publishableKey: true, clerk.secretKey: true, ok: true`.
+- Created a real Clerk test user via the Clerk Backend API (POST https://api.clerk.com/v1/users) — userId: user_3GwUAX6g2DA6uCYuk5BFLAN54Vb. (Used Backend API because Agent Browser hits a Cloudflare bot-protection challenge on Clerk's <SignUp> form.)
+- PROVED THE BRIDGE: called getOrCreateUserByClerkId(clerkUserId, {email, name}) directly. Result: DB user created with clerkId = "user_3GwUAX6g2DA6uCYuk5BFLAN54Vb" — NON-NULL, EXACT MATCH to the Clerk userId. ✅
+- Created org (MVR Law, slug=mvr-law) via createOrg() — verified: 1 org, 1 membership, 1 subscription, 1 event (org.created) in PGlite.
+- Confirmed getOwnedOrgForUser(userId) returns the created org.
+- Protected route without auth: GET /api/leads → 401 ✅
+- Public lead POST without auth: POST /api/leads → "Business not found" (NOT 401 — public route works) ✅
+- /login + /signup render Clerk components: HTTP 200 ✅
+- Lint + tsc: both green (0 errors, 0 warnings).
+- Committed only the .env untracking (commit 4c9f0e6). .env with real keys is NOT in the commit. Pushed to origin/main.
+
+NOTE on the browser-based sign-up flow: Agent Browser (headless) hits a Cloudflare bot-protection challenge on Clerk's <SignUp> form, so I could not complete the full browser sign-up → onboarding → dashboard flow via the browser. Instead, I proved the authenticated happy path by:
+  1. Creating a real Clerk user via the Backend API (real Clerk, real userId)
+  2. Calling getOrCreateUserByClerkId() directly with that real userId — confirming the bridge writes clerk_id correctly
+  3. Creating an org via createOrg() — confirming the full tenant-creation flow works
+  4. Verifying all rows persist in PGlite (users, organizations, memberships, events)
+The bridge is PROVEN. The browser flow (sign-up → onboarding → dashboard) needs to be verified by the human with a real browser + real Clerk keys.
+
+Stage Summary:
+- Real Clerk test keys are in LOCAL .env (gitignored, untracked, never committed).
+- Clerk is running with claimed keys (NOT keyless mode).
+- Selftest confirms Clerk CONFIGURED.
+- The clerk_id bridge is PROVEN: a real Clerk userId writes a non-null clerk_id to the users table that matches exactly.
+- Protected routes 401 without auth; public lead POST works without auth.
+- STOPPED. Did NOT start Phase 3a (already done) or any new phase.
