@@ -3,11 +3,9 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAppStore } from "@/store/app-store";
+import Link from "next/link";
 
 export default function CtaSection() {
-  const navigate = useAppStore((s) => s.navigate);
-
   return (
     <section className="bg-white py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -42,11 +40,13 @@ export default function CtaSection() {
             </p>
             <Button
               size="lg"
-              onClick={() => navigate("auth")}
+              asChild
               className="mt-8 bg-white text-emerald-700 shadow-lg hover:bg-emerald-50"
             >
-              Start Your 7-Day Free Trial
-              <ArrowRight className="size-4" />
+              <Link href="/signup">
+                Start Your 7-Day Free Trial
+                <ArrowRight className="size-4" />
+              </Link>
             </Button>
           </div>
         </motion.div>

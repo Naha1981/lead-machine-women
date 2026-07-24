@@ -210,7 +210,6 @@ function UserMenu() {
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const org = useAppStore((s) => s.org);
-  const openPublicSite = useAppStore((s) => s.openPublicSite);
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const industryLabel = org
@@ -266,13 +265,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => org && openPublicSite(org.slug)}
+            asChild
             disabled={!org}
             className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
           >
-            <ExternalLink className="size-4" />
-            <span className="hidden sm:inline">View my site</span>
-            <span className="sm:hidden">Site</span>
+            <a href={org ? `/s/${org.slug}` : "#"} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="size-4" />
+              <span className="hidden sm:inline">View my site</span>
+              <span className="sm:hidden">Site</span>
+            </a>
           </Button>
           <Separator orientation="vertical" className="hidden h-6 sm:block" />
           <UserMenu />

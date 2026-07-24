@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PLANS } from "@/lib/constants";
-import { useAppStore } from "@/store/app-store";
+import Link from "next/link";
 
 export default function PricingSection() {
-  const navigate = useAppStore((s) => s.navigate);
-
   return (
     <section id="pricing" className="scroll-mt-20 bg-white py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -90,10 +88,12 @@ export default function PricingSection() {
                           : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                       }`}
                       variant={plan.highlight ? "default" : "outline"}
-                      onClick={() => navigate("auth")}
+                      asChild
                     >
-                      {plan.cta}
-                      <ArrowRight className="size-4" />
+                      <Link href="/signup">
+                        {plan.cta}
+                        <ArrowRight className="size-4" />
+                      </Link>
                     </Button>
 
                     <ul className="flex w-full flex-col gap-2.5 border-t border-slate-100 pt-4">

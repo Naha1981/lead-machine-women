@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Zap, Menu, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +12,6 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import { useAppStore } from "@/store/app-store";
 
 const NAV_LINKS = [
   { href: "#features", label: "Features" },
@@ -21,18 +21,7 @@ const NAV_LINKS = [
 ];
 
 export default function LandingHeader() {
-  const navigate = useAppStore((s) => s.navigate);
   const [open, setOpen] = useState(false);
-
-  const handleStart = () => {
-    setOpen(false);
-    navigate("auth");
-  };
-
-  const handleSignIn = () => {
-    setOpen(false);
-    navigate("auth");
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-emerald-100/70 bg-white/80 backdrop-blur-md">
@@ -64,17 +53,19 @@ export default function LandingHeader() {
         <div className="hidden items-center gap-2 md:flex">
           <Button
             variant="ghost"
-            onClick={handleSignIn}
+            asChild
             className="text-slate-700 hover:bg-emerald-50 hover:text-emerald-700"
           >
-            Sign In
+            <Link href="/login">Sign In</Link>
           </Button>
           <Button
-            onClick={handleStart}
+            asChild
             className="bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
           >
-            Start Free Trial
-            <ArrowRight className="size-4" />
+            <Link href="/signup">
+              Start Free Trial
+              <ArrowRight className="size-4" />
+            </Link>
           </Button>
         </div>
 
@@ -113,20 +104,26 @@ export default function LandingHeader() {
                 ))}
               </nav>
               <div className="mt-auto flex flex-col gap-2 p-4">
-                <Button
-                  variant="outline"
-                  onClick={handleSignIn}
-                  className="w-full border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                >
-                  Sign In
-                </Button>
-                <Button
-                  onClick={handleStart}
-                  className="w-full bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
-                >
-                  Start Free Trial
-                  <ArrowRight className="size-4" />
-                </Button>
+                <SheetClose asChild>
+                  <Button
+                    variant="outline"
+                    asChild
+                    className="w-full border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Button
+                    asChild
+                    className="w-full bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+                  >
+                    <Link href="/signup">
+                      Start Free Trial
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  </Button>
+                </SheetClose>
               </div>
             </SheetContent>
           </Sheet>

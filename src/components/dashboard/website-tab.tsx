@@ -49,7 +49,6 @@ const INDUSTRY_EMOJI: Record<string, string> = {
 
 export default function WebsiteTab() {
   const org = useAppStore((s) => s.org);
-  const openPublicSite = useAppStore((s) => s.openPublicSite);
 
   const { data, loading, error, reload, setData } = useAsync(
     () => apiClient.getWebsite(),
@@ -215,10 +214,12 @@ export default function WebsiteTab() {
                   size="sm"
                   variant="ghost"
                   className="h-7 text-xs gap-1"
-                  onClick={() => openPublicSite(effectiveOrg.slug)}
+                  asChild
                 >
-                  <ExternalLink className="size-3.5" />
-                  Open full view
+                  <a href={`/s/${effectiveOrg.slug}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="size-3.5" />
+                    Open full view
+                  </a>
                 </Button>
               </div>
 
@@ -418,7 +419,7 @@ export default function WebsiteTab() {
               icon={Eye}
               label="View public site"
               hint={publicUrl}
-              onClick={() => openPublicSite(effectiveOrg.slug)}
+              onClick={() => window.open(`/s/${effectiveOrg.slug}`, "_blank")}
             />
             <QuickAction
               icon={Share2}

@@ -1,9 +1,12 @@
-// Lead Machine — Clerk middleware (Phase 2).
-// Protects API routes + forward-compatible matchers for future App Router
-// routes (Phase 3 will create /dashboard, /onboarding, /settings as real routes).
+// Lead Machine — Clerk middleware (Phase 3a).
+// Uses an allowlist: only routes in isProtectedRoute() are gated. Everything
+// else (including /s/(.*), /login, /signup, /, /api/leads POST) is public.
 //
 // PUBLIC (must stay open — the product breaks otherwise):
-//   /                          (marketing page AND /?site= public sites)
+//   /                          (marketing page; /?site= redirects to /s/[slug])
+//   /s/(.*)                    (public generated sites — the sellable URL)
+//   /login                     (Clerk sign-in, path routing)
+//   /signup                    (Clerk sign-up, path routing)
 //   /api/leads                 (POST = visitor lead submit, NO auth; GET checks auth() internally)
 //   /api/website/public(.*)    (public generated site data)
 //   /api/auth/me               (returns { user: null } for unauthed — client needs JSON, not a redirect)
@@ -13,9 +16,9 @@
 //   /api/webhooks/(.*)         (public — external systems call these)
 //
 // PROTECTED (auth.protect()):
-//   /dashboard(.*)             (Phase 3 — forward-compatible)
-//   /onboarding(.*)            (Phase 3 — forward-compatible)
-//   /settings(.*)              (Phase 3 — forward-compatible)
+//   /dashboard(.*)             (Phase 3b — forward-compatible)
+//   /onboarding(.*)            (Phase 3b — forward-compatible)
+//   /settings(.*)              (Phase 3b — forward-compatible)
 //   /api/orgs(.*)
 //   /api/ai(.*)
 //   /api/billing(.*)

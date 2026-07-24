@@ -28,8 +28,9 @@ import { useAppStore } from "@/store/app-store";
 import { useAsync, apiClient } from "@/lib/api-client";
 import { LeadForm } from "@/components/lead/lead-form";
 import { ChatWidget } from "@/components/ai/chat-widget";
+import { PublicSiteRenderer } from "@/components/views/public-site-renderer";
 
-type PublicOrg = {
+export type PublicOrg = {
   name: string;
   slug: string;
   industry: string;
@@ -39,7 +40,7 @@ type PublicOrg = {
   whatsappConnected: boolean;
 };
 
-type PublicWebsite = {
+export type PublicWebsite = {
   id: string;
   template: string;
   heroHeadline: string | null;
@@ -50,7 +51,7 @@ type PublicWebsite = {
   ctaText: string | null;
 };
 
-const INDUSTRY_EMOJI: Record<string, string> = {
+export const INDUSTRY_EMOJI: Record<string, string> = {
   legal: "⚖️",
   consulting: "💼",
   hr: "🤝",
@@ -71,8 +72,6 @@ export default function PublicSiteView() {
     () => (publicSlug ? apiClient.getPublicWebsite(publicSlug) : Promise.reject(new Error("no-slug"))),
     [publicSlug]
   );
-
-  const [contactRef, setContactRef] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!publicSlug) navigate("dashboard");
@@ -109,40 +108,15 @@ export default function PublicSiteView() {
 
   const org = data.org as PublicOrg;
   const website = data.website as PublicWebsite;
-  const brand = org.primaryColor || "#10b981";
 
   return (
-    <div
-      className="min-h-screen bg-[#0a0a0a]"
-      style={{ ["--brand" as any]: brand }}
-    >
-      {/* Back to dashboard (only for logged-in owners) */}
-      {user && (
-        <button
-          onClick={() => navigate("dashboard", { tab: "website" })}
-          className="fixed top-3 left-3 z-40 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 shadow-sm transition-colors"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back to dashboard
-        </button>
-      )}
-
-      <PublicSiteContent
-        org={org}
-        website={website}
-        brand={brand}
-        contactRef={contactRef}
-        setContactRef={setContactRef}
-      />
-
-      <ChatWidget slug={org.slug} businessName={org.name} />
-    </div>
+    <PublicSiteRenderer org={org} website={website} />
   );
 }
 
 /* ---------------------------- content ---------------------------- */
 
-function PublicSiteContent({
+export function PublicSiteContent({
   org,
   website,
   brand,

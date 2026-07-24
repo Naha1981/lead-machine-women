@@ -1,6 +1,7 @@
 "use client";
-// Lead Machine — single-route SPA view router (Phase 2: Clerk auth signal)
+// Lead Machine — single-route SPA view router (Phase 3a: canonical /s/[slug] redirect)
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useAppStore } from "@/store/app-store";
 import { apiClient } from "@/lib/api-client";
@@ -48,21 +49,21 @@ export default function Home() {
   const setSession = useAppStore((s) => s.setSession);
   const setSessionLoading = useAppStore((s) => s.setSessionLoading);
   const navigate = useAppStore((s) => s.navigate);
-  const openPublicSite = useAppStore((s) => s.openPublicSite);
+  const router = useRouter();
 
   // Clerk is the source of truth for identity (Phase 2).
   const { isLoaded, isSignedIn } = useUser();
 
-  // URL-based public access: /?site=slug renders that business's public site
-  // with NO auth required. This is how prospects visit a client's site.
+  // Canonical URL: /?site=slug redirects to /s/[slug] (the real public route).
+  // Old demo links and the dashboard's "View my site" button keep working.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const siteSlug = params.get("site");
     if (siteSlug) {
-      openPublicSite(siteSlug);
+      router.replace(`/s/${encodeURIComponent(siteSlug)}`);
     }
-  }, [openPublicSite]);
+  }, [router]);
 
   // When Clerk auth state changes, fetch the bridged org info from our API.
   // The API uses auth() server-side to identify the Clerk user and bridges

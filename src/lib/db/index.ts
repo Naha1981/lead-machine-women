@@ -12,12 +12,17 @@
 //
 // PGlite is a dev-only convenience. In production on Vercel, set DATABASE_URL to
 // a Neon connection string and the PGlite branch never executes.
-import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+//
+// NOTE: Neon + PGlite imports are LAZY (dynamic import inside functions) to
+// avoid module-level side effects that break in Next.js RSC (Server Component)
+// contexts with Turbopack.
 
 import * as schema from "./schema";
 
-export type DbClient = ReturnType<typeof drizzleNeon<typeof schema.schema>>;
+// We use `any` for the client type because the Neon and PGlite drizzle drivers
+// have different types but the same query API. Services call getDb() which
+// returns a unified client.
+export type DbClient = any;
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const IS_PROD_BUILD =
@@ -28,8 +33,11 @@ function isPostgresUrl(v: string): boolean {
 }
 
 // Production / explicit-Neon path: real DATABASE_URL → Neon HTTP client.
-function createNeonClient(url: string): DbClient {
-  return drizzleNeon(neon(url), { schema: schema.schema });
+// Lazy import to avoid module-level side effects in RSC.
+async function createNeonClient(url: string): Promise<DbClient> {
+  const { drizzle } = await import("drizzle-orm/neon-http");
+  const { neon } = await import("@neondatabase/serverless");
+  return drizzle(neon(url), { schema: schema.schema });
 }
 
 // Dev fallback: in-process Postgres (PGlite) persisted to a local directory.
@@ -42,7 +50,10 @@ async function createPgliteClient(): Promise<DbClient> {
       const { drizzle } = await import("drizzle-orm/pglite");
       const path = await import("node:path");
       const fs = await import("node:fs");
-      const dbDir = path.join(process.cwd(), "db", "pglite");
+      // Ensure dbDir is a plain string — process.cwd() can return a URL-like
+      // object in some Next.js Turbopack RSC contexts, which breaks PGlite.
+      const cwd = String(process.cwd());
+      const dbDir = String(path.join(cwd, "db", "pglite"));
       try {
         fs.mkdirSync(dbDir, { recursive: true });
       } catch {
@@ -185,15 +196,14 @@ async function ensureSchema(db: any): Promise<void> {
   }
 }
 
-// Synchronous export used by services. Null when there's no Neon URL AND we're
-// in a production build (so the build makes zero DB calls).
-export const db: DbClient | null = DATABASE_URL
-  ? isPostgresUrl(DATABASE_URL)
-    ? createNeonClient(DATABASE_URL)
-    : null
-  : IS_PROD_BUILD
-  ? null
-  : null; // dev with no DATABASE_URL → resolved lazily via getDb() below
+// The synchronous `db` export is always null in the new architecture —
+// clients must use getDb() which lazily creates the appropriate client.
+// This avoids any module-level DB client construction (build-safe with zero
+// env vars) and avoids PGlite/Neon side effects in RSC.
+export const db: DbClient | null = null;
+
+// Cached Neon client promise (only created when DATABASE_URL is a postgres URL).
+let neonClientPromise: Promise<DbClient> | null = null;
 
 // Services call getDb() to obtain a client. Resolution rules:
 //   - DATABASE_URL is a postgres URL → Neon HTTP client (production)
@@ -202,7 +212,10 @@ export const db: DbClient | null = DATABASE_URL
 //   - otherwise (production build, no usable URL) → throw DATABASE_NOT_CONFIGURED
 export async function getDb(): Promise<DbClient> {
   if (DATABASE_URL && isPostgresUrl(DATABASE_URL)) {
-    return db as DbClient;
+    if (!neonClientPromise) {
+      neonClientPromise = createNeonClient(DATABASE_URL);
+    }
+    return neonClientPromise;
   }
   if (!IS_PROD_BUILD) {
     // Dev: no DATABASE_URL, or a non-postgres DATABASE_URL (e.g. legacy file: path).
@@ -211,10 +224,11 @@ export async function getDb(): Promise<DbClient> {
   throw new Error("DATABASE_NOT_CONFIGURED");
 }
 
-// Synchronous guard for code paths that already hold a `db` reference.
+// Synchronous guard — always throws now since db is always null. Services
+// should use getDb() instead. Kept for backward compat with any code that
+// imports it.
 export function requireDb(): DbClient {
-  if (!db) throw new Error("DATABASE_NOT_CONFIGURED");
-  return db;
+  throw new Error("DATABASE_NOT_CONFIGURED — use getDb() instead");
 }
 
 export { schema };

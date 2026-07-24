@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useAppStore } from "@/store/app-store";
+import Link from "next/link";
 
 const TRUST_BADGES = [
   "No coding needed",
@@ -21,8 +21,6 @@ const TRUST_BADGES = [
 ];
 
 export default function HeroSection() {
-  const navigate = useAppStore((s) => s.navigate);
-
   return (
     <section
       id="top"
@@ -74,11 +72,13 @@ export default function HeroSection() {
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button
               size="lg"
-              onClick={() => navigate("auth")}
+              asChild
               className="bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
             >
-              Start Free Trial
-              <ArrowRight className="size-4" />
+              <Link href="/signup">
+                Start Free Trial
+                <ArrowRight className="size-4" />
+              </Link>
             </Button>
             <Button
               size="lg"
