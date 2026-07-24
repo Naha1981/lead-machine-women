@@ -448,3 +448,49 @@ Stage Summary:
 - The clerk_id bridge is PROVEN: a real Clerk userId writes a non-null clerk_id to the users table that matches exactly.
 - Protected routes 401 without auth; public lead POST works without auth.
 - STOPPED. Did NOT start Phase 3a (already done) or any new phase.
+
+---
+Task ID: phase-4-vercel-ai-sdk
+Agent: main
+Task: Phase 4 — replace z-ai-web-dev-sdk with Vercel AI SDK
+
+Work Log:
+- Audited: src/lib/ai.ts (single AI helper, 3 functions using zai.chat.completions.create() + manual JSON parsing). 3 route handlers import from it. selftest had a comment reference. Chat client expected JSON { reply: string } (non-streaming).
+- Installed ai@7.0.37 + @ai-sdk/openai@4.0.20. Removed z-ai-web-dev-sdk.
+- Restructured: src/lib/ai.ts → src/lib/ai/index.ts (git mv). Created src/lib/ai/provider.ts + src/lib/ai/schemas.ts alongside it.
+- Created src/lib/ai/provider.ts: lazy getModel() factory. Reads OPENAI_API_KEY at call time (never module load). Default model gpt-4o-mini (override via AI_MODEL). Throws AINotConfiguredError if no key. Provider-agnostic (swap to groq/anthropic = one-file change).
+- Created src/lib/ai/schemas.ts: Zod schemas matching the legacy TS types exactly — generatedWebsiteContentSchema (heroHeadline, heroSubtext, aboutText, services[3-6], faq[3-6], ctaText) + leadQualificationSchema (score 1-10, temperature hot/warm/cold, reason, suggestedAction).
+- Rewrote src/lib/ai/index.ts:
+  - generateWebsiteContent() → generateObject({ model: getModel(), schema: generatedWebsiteContentSchema, system, prompt })
+  - qualifyLead() → generateObject({ model: getModel(), schema: leadQualificationSchema, system, prompt })
+  - streamChatReply() → streamText({ model: getModel(), messages }).toTextStreamResponse() — returns a streaming text Response
+  - Legacy chatReply() wrapper kept (delegates to streamChatReply, awaits text)
+- Updated chat route: returns the streaming Response directly. Catches AINotConfiguredError → 503 { error: { code: "AI_NOT_CONFIGURED", message } }.
+- Updated generate-website + qualify-lead routes: catch AINotConfiguredError → 503 structured error.
+- Updated api-client.ts: chat() method now reads res.text() (text stream) instead of res.json(). Error handling parses { error: { code, message } }.
+- Updated leads route: AI qualification already had try/catch — AINotConfiguredError is caught there, lead is still created with null score (graceful degradation — core revenue flow works without AI).
+- Middleware fix: /api/ai/chat moved from PROTECTED to PUBLIC (used by chat widget on /s/[slug] — visitors chat with NO auth). Only /api/ai/generate-website + /api/ai/qualify-lead are protected.
+- Updated .env.example: OPENAI_API_KEY + AI_MODEL documented.
+- Updated selftest comment: "Vercel AI SDK (Phase 4) — OpenAI by default".
+
+VERIFICATION (all green, zero env vars for AI — Clerk keys from .env):
+- bun run lint: 0 errors, 0 warnings.
+- bunx tsc --noEmit: 0 errors (source only).
+- Runtime (Clerk keys set, NO OPENAI_API_KEY):
+  1. Selftest: ai: false (correct — AI not configured)
+  2. /api/ai/chat with real slug → 503 { error: { code: "AI_NOT_CONFIGURED", message } } (graceful)
+  3. /api/ai/chat with fake slug → 404 "Business not found" (public route, NOT 401)
+  4. /s/mvr-law → HTTP 200 (dark site renders)
+  5. POST /api/leads with real slug → lead created with score: null (AI gracefully skipped, lead still created)
+  6. Protected AI routes (generate-website, qualify-lead) → protected by Clerk (not 200)
+  7. Landing, /login, /signup → all 200
+  8. Zero z-ai-web-dev-sdk references in src/ + dev logs
+- z-ai-web-dev-sdk removed from package.json. Zero grep hits in src/.
+
+Stage Summary:
+- Phase 4 COMPLETE. All three AI features (website generation, lead qualification, chatbot) run on the Vercel AI SDK with a standard OpenAI provider key. The app is no longer tied to the chat.z.ai sandbox runtime.
+- Output shapes unchanged: the Zod schemas produce the exact same GeneratedWebsiteContent + LeadQualification shapes as before.
+- Build passes with zero env vars (lazy provider + force-dynamic).
+- Graceful degradation: without OPENAI_API_KEY, AI endpoints return AI_NOT_CONFIGURED 503; lead submission still works (score: null); the app doesn't crash.
+- Middleware fix: /api/ai/chat is now PUBLIC (was incorrectly protected, blocking the chat widget on public sites).
+- STOPPED. Did NOT start Phase 5 (Evolution API WhatsApp).
