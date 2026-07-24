@@ -1,7 +1,9 @@
-// Lead Machine — simple session auth (cookie-based)
+// Lead Machine — session auth (cookie-based). DB access is delegated to the
+// auth service module. NOTE: this bcrypt session auth is the Phase-1 placeholder;
+// Phase 2 replaces it with Clerk.
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
+import { getUserById, getOwnedOrgForUser } from "@/modules/auth/service";
 
 export const SESSION_COOKIE = "lm_session";
 const SESSION_TTL_DAYS = 30;
@@ -45,11 +47,9 @@ export async function getCurrentUser() {
     if (!raw) return null;
     const userId = raw.split(":")[0];
     if (!userId) return null;
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, name: true },
-    });
-    return user;
+    const user = await getUserById(userId);
+    if (!user) return null;
+    return { id: user.id, email: user.email, name: user.name };
   } catch {
     return null;
   }
@@ -58,28 +58,29 @@ export async function getCurrentUser() {
 export async function getCurrentOrg() {
   const user = await getCurrentUser();
   if (!user) return null;
-  const membership = await db.membership.findFirst({
-    where: { userId: user.id, role: "owner" },
-    include: { org: true },
-  });
-  if (!membership) return null;
-  const o = membership.org;
-  return {
-    id: o.id,
-    name: o.name,
-    slug: o.slug,
-    industry: o.industry,
-    services: o.services,
-    logoUrl: o.logoUrl,
-    primaryColor: o.primaryColor,
-    whatsappNumber: o.whatsappNumber,
-    whatsappConnected: o.whatsappConnected,
-    ownerPhone: o.ownerPhone,
-    plan: o.plan,
-    trialEndsAt: o.trialEndsAt?.toISOString() ?? null,
-    createdAt: o.createdAt.toISOString(),
-    updatedAt: o.updatedAt.toISOString(),
-  };
+  try {
+    const o = await getOwnedOrgForUser(user.id);
+    if (!o) return null;
+    return {
+      id: o.id,
+      name: o.name,
+      slug: o.slug,
+      industry: o.industry,
+      services: o.services,
+      logoUrl: o.logoUrl,
+      primaryColor: o.primaryColor,
+      whatsappNumber: o.whatsappNumber,
+      whatsappConnected: o.whatsappConnected,
+      ownerPhone: o.ownerPhone,
+      plan: o.plan,
+      trialEndsAt: o.trialEndsAt?.toISOString() ?? null,
+      createdAt: o.createdAt.toISOString(),
+      updatedAt: o.updatedAt.toISOString(),
+    };
+  } catch (e) {
+    // DATABASE_NOT_CONFIGURED or similar — treat as no org.
+    return null;
+  }
 }
 
 export async function requireAuth() {

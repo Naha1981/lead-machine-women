@@ -260,3 +260,59 @@ Stage Summary:
 - Onboarding toggle DONE: businesses with existing sites get the embed-snippet path instead of site generation.
 - Dark theme applied to generated sites per spec (#0a0a0a + emerald accent).
 - Footer year fixed to 2026.
+
+---
+Task ID: phase-1-data-layer
+Agent: main
+Task: Phase 1 — migrate data layer Prisma+SQLite → Drizzle+Neon PostgreSQL
+
+Work Log:
+- Audited: 16 source files imported Prisma (`@/lib/db` → Prisma client). Enumerated every `db.<model>.<method>()` call across 14 route handlers + lib/auth.ts + lib/whatsapp.ts.
+- Installed: drizzle-orm, drizzle-kit, @neondatabase/serverless, @electric-sql/pglite (dev fallback).
+- Wrote src/lib/db/schema.ts — pgTable schema re-expressing the Prisma models 1:1 (users, organizations, memberships, leads, websites, whatsapp_messages, subscriptions) + NEW events table (id, org_id, user_id, event_type, payload jsonb, created_at) for the event-driven standard. uuid PKs with defaultRandom(), timestamptz with defaultNow(), org_id indexes on every business table, jsonb for website.services/faq and events.payload.
+- Wrote src/lib/db/index.ts — NULLABLE db client per the resilience spec:
+  - DATABASE_URL is a postgres URL → drizzle(neon(url), {schema}) (production Neon path)
+  - DATABASE_URL absent OR not a postgres URL + not a production build → lazily-initialized PGlite dev fallback (in-process Postgres, same pgTable schema, persisted to ./db/pglite, auto-creates tables on first boot via ensureSchema())
+  - production build + no DATABASE_URL → null (zero DB calls at build time)
+  - getDb() async helper (PGlite is async to init); requireDb() sync guard.
+- Created 7 service modules under src/modules/<domain>/service.ts (the domain-driven standard):
+  - events/service.ts — emitEvent() (best-effort, never throws)
+  - auth/service.ts — getUserByEmail/ById, createUser, getOwnedOrgForUser, hasOwnerMembership
+  - orgs/service.ts — createOrg (org+membership+subscription+event), updateOrg, getOrgBySlug/Id
+  - leads/service.ts — createLead (+events), updateLeadFlags, setLeadQualification, updateLeadStatus, getLeadForOrg, listLeadsForOrg (filtered)
+  - websites/service.ts — saveGeneratedWebsite, publishWebsite, getWebsiteForOrg, getPublishedWebsiteBySlug (org+website read)
+  - whatsapp/service.ts — createMessage (+event), listMessagesForOrg (left join leads)
+  - billing/service.ts — getSubscriptionForOrg, setSubscriptionPlan (upsert + org sync + events)
+- Migrated all 14 route handlers + lib/auth.ts + lib/whatsapp.ts from Prisma API to service calls. Zero `prisma.*` calls remain. Route handlers are now THIN (auth → Zod → call service → typed response); all DB logic is in services. Every service entry goes through getDb() which throws DATABASE_NOT_CONFIGURED if no client.
+- Added `export const dynamic = "force-dynamic"` to all auth/data route handlers.
+- Event emission: every significant action emits to the events table (user.signed_up, user.signed_in, org.created, org.updated, website.generated, website.published/unpublished, lead.created, lead.qualified, lead.status_changed, whatsapp.sent, subscription.created/updated).
+- Removed Prisma: deleted prisma/schema.prisma + prisma/ dir, removed @prisma/client + prisma from package.json deps, replaced db:push/generate/migrate/reset scripts with drizzle-kit push/studio/generate, deleted old db/custom.db (SQLite file). No source imports @prisma/client or PrismaClient.
+- Wrote drizzle.config.ts (postgresql dialect, reads DATABASE_URL, falls back to local pglite file). Wrote .env.example (documents DATABASE_URL for Neon prod + all later-phase vars). Set .env with DATABASE_URL unset so PGlite dev fallback activates.
+- Fixed two bugs found during verification:
+  1. memberships table had two PKs (id + composite orgId/userId) → changed composite primaryKey to uniqueIndex. Postgres allows only one PK.
+  2. CREATE EXTENSION pgcrypto failed in PGlite → removed (gen_random_uuid() is built-in).
+  3. Stale `DATABASE_URL=file:...` env var from original .env caused getDb() to throw → fixed getDb() to treat any non-postgres DATABASE_URL as "dev → PGlite".
+
+VERIFICATION (all green):
+- `bun run lint` with ZERO env vars: 0 errors, 0 warnings.
+- `bunx tsc --noEmit` (source only): 0 errors (pre-existing errors in examples/ and skills/ folders untouched).
+- Dev server boots with zero env vars (PGlite dev fallback).
+- End-to-end runtime test via direct API calls + direct PGlite query:
+  - signup → user created (uuid PK), session cookie set
+  - /api/auth/me → reads user via Drizzle
+  - createOrg → organizations + memberships + subscriptions + org.created event
+  - AI generate-website → 5 services + headline written to websites (jsonb), website.generated event
+  - publish → websites.published updated, website.published event
+  - public site by slug → org+website join read returns published site
+  - submit lead (public) → lead created + AI qualified 9/10 HOT + 2 whatsapp messages + lead.created + lead.qualified + 2× whatsapp.sent events
+  - list leads → filtered Drizzle read returns the lead
+  - whatsapp messages → left-join leads returns both messages
+  - billing subscribe → subscriptions upsert + organizations.plan sync + subscription.updated event
+  - Direct PGlite query confirms: 1 user, 1 org, 1 membership, 1 lead, 1 website, 2 whatsapp_messages, 1 subscription, 9 events across 8 event types
+  - Zero errors in dev.log
+
+Stage Summary:
+- Phase 1 (data layer migration) COMPLETE. Prisma+SQLite fully replaced by Drizzle+Neon (with PGlite dev fallback). The app behaves identically to the approved demo — same UI, same flows — now reading/writing Postgres via Drizzle services instead of SQLite via Prisma.
+- Build passes with zero env vars (nullable client). Runtime works with zero env vars (PGlite dev fallback) AND will work with a Neon DATABASE_URL in production (same schema, same services, neon-http driver).
+- UI, auth (bcrypt), routing (Zustand), AI (z-ai-web-dev-sdk), WhatsApp (simulator) all UNTOUCHED — they are later phases.
+- STOPPED. Did NOT start Phase 2 (Clerk auth).

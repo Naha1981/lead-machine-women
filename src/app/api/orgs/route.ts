@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { slugify, INDUSTRIES } from "@/lib/constants";
+import { createOrg, updateOrg } from "@/modules/orgs/service";
+import { getOwnedOrgForUser, hasOwnerMembership } from "@/modules/auth/service";
+import { INDUSTRIES } from "@/lib/constants";
 
 const createSchema = z.object({
   name: z.string().min(2).max(120),
@@ -12,6 +13,8 @@ const createSchema = z.object({
   ownerPhone: z.string().max(30).optional(),
   primaryColor: z.string().max(9).optional(),
 });
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
@@ -25,51 +28,40 @@ export async function POST(req: Request) {
     }
     const { name, industry, services, whatsappNumber, ownerPhone, primaryColor } = parsed.data;
 
-    // ensure user doesn't already own an org
-    const existing = await db.membership.findFirst({
-      where: { userId: user.id, role: "owner" },
-    });
-    if (existing) {
+    if (await hasOwnerMembership(user.id)) {
       return NextResponse.json({ error: "You already have an organization." }, { status: 409 });
-    }
-
-    let slug = slugify(name);
-    let suffix = 1;
-    while (await db.organization.findUnique({ where: { slug } })) {
-      slug = `${slugify(name)}-${suffix++}`;
     }
 
     const validIndustry = INDUSTRIES.find((i) => i.value === industry) ? industry : "other";
 
-    const org = await db.organization.create({
-      data: {
-        name,
-        slug,
-        industry: validIndustry,
-        services: services ?? null,
-        whatsappNumber: whatsappNumber ?? null,
-        ownerPhone: ownerPhone ?? null,
-        primaryColor: primaryColor ?? "#059669",
-        ownerId: user.id,
-        plan: "trial",
-        trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
-    });
-    await db.membership.create({
-      data: { orgId: org.id, userId: user.id, role: "owner" },
-    });
-    await db.subscription.create({
-      data: {
-        orgId: org.id,
-        plan: "trial",
-        amountZar: 0,
-        status: "trial",
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
+    const org = await createOrg({
+      name,
+      industry: validIndustry,
+      services: services ?? null,
+      whatsappNumber: whatsappNumber ?? null,
+      ownerPhone: ownerPhone ?? null,
+      primaryColor: primaryColor ?? "#059669",
+      ownerId: user.id,
     });
 
-    return NextResponse.json({ org });
+    return NextResponse.json({
+      org: {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        industry: org.industry,
+        services: org.services,
+        logoUrl: org.logoUrl,
+        primaryColor: org.primaryColor,
+        whatsappNumber: org.whatsappNumber,
+        whatsappConnected: org.whatsappConnected,
+        ownerPhone: org.ownerPhone,
+        plan: org.plan,
+        trialEndsAt: org.trialEndsAt?.toISOString() ?? null,
+        createdAt: org.createdAt.toISOString(),
+        updatedAt: org.updatedAt.toISOString(),
+      },
+    });
   } catch (e: any) {
     console.error("[orgs POST]", e);
     return NextResponse.json({ error: e?.message ?? "Server error" }, { status: 500 });
@@ -80,10 +72,8 @@ export async function PUT(req: Request) {
   try {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const membership = await db.membership.findFirst({
-      where: { userId: user.id, role: "owner" },
-    });
-    if (!membership) return NextResponse.json({ error: "No organization" }, { status: 404 });
+    const owned = await getOwnedOrgForUser(user.id);
+    if (!owned) return NextResponse.json({ error: "No organization" }, { status: 404 });
 
     const body = await req.json();
     const data: any = {};
@@ -95,11 +85,25 @@ export async function PUT(req: Request) {
     if (typeof body.primaryColor === "string") data.primaryColor = body.primaryColor.slice(0, 9);
     if (typeof body.whatsappConnected === "boolean") data.whatsappConnected = body.whatsappConnected;
 
-    const org = await db.organization.update({
-      where: { id: membership.orgId },
-      data,
+    const org = await updateOrg(owned.id, data);
+    return NextResponse.json({
+      org: {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        industry: org.industry,
+        services: org.services,
+        logoUrl: org.logoUrl,
+        primaryColor: org.primaryColor,
+        whatsappNumber: org.whatsappNumber,
+        whatsappConnected: org.whatsappConnected,
+        ownerPhone: org.ownerPhone,
+        plan: org.plan,
+        trialEndsAt: org.trialEndsAt?.toISOString() ?? null,
+        createdAt: org.createdAt.toISOString(),
+        updatedAt: org.updatedAt.toISOString(),
+      },
     });
-    return NextResponse.json({ org });
   } catch (e: any) {
     console.error("[orgs PUT]", e);
     return NextResponse.json({ error: e?.message ?? "Server error" }, { status: 500 });

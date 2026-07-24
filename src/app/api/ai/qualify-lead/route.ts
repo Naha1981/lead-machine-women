@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
 import { getCurrentOrg } from "@/lib/auth";
+import { getLeadForOrg, setLeadQualification } from "@/modules/leads/service";
 import { qualifyLead } from "@/lib/ai";
 
 const schema = z.object({
   leadId: z.string().min(2).max(60),
 });
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
@@ -18,7 +20,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const lead = await db.lead.findFirst({ where: { id: parsed.data.leadId, orgId: org.id } });
+    const lead = await getLeadForOrg(parsed.data.leadId, org.id);
     if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
     const q = await qualifyLead({
@@ -31,21 +33,18 @@ export async function POST(req: Request) {
       message: lead.message ?? undefined,
     });
 
-    const updated = await db.lead.update({
-      where: { id: lead.id },
-      data: {
-        aiScore: q.score,
-        aiTemperature: q.temperature,
-        aiReason: `${q.reason} → ${q.suggestedAction}`,
-      },
+    const updated = await setLeadQualification(lead.id, {
+      score: q.score,
+      temperature: q.temperature,
+      reason: `${q.reason} → ${q.suggestedAction}`,
     });
 
     return NextResponse.json({
       lead: {
-        id: updated.id,
-        aiScore: updated.aiScore,
-        aiTemperature: updated.aiTemperature,
-        aiReason: updated.aiReason,
+        id: (updated ?? lead).id,
+        aiScore: (updated ?? lead).aiScore,
+        aiTemperature: (updated ?? lead).aiTemperature,
+        aiReason: (updated ?? lead).aiReason,
       },
       qualification: q,
     });

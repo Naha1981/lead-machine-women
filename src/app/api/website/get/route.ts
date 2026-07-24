@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { getCurrentOrg } from "@/lib/auth";
+import { getWebsiteForOrg } from "@/modules/websites/service";
+import type { WebsiteService, WebsiteFaq } from "@/modules/websites/service";
+
+export const dynamic = "force-dynamic";
 
 // GET /api/website/get  — current org's website (for dashboard)
 export async function GET() {
   try {
     const org = await getCurrentOrg();
     if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const website = await db.website.findUnique({ where: { orgId: org.id } });
+    const website = await getWebsiteForOrg(org.id);
     if (!website) return NextResponse.json({ website: null });
     return NextResponse.json({
       website: {
@@ -17,8 +20,8 @@ export async function GET() {
         heroHeadline: website.heroHeadline,
         heroSubtext: website.heroSubtext,
         aboutText: website.aboutText,
-        services: website.services ? safeParse(website.services) : [],
-        faq: website.faq ? safeParse(website.faq) : [],
+        services: (website.services as WebsiteService[] | null) ?? [],
+        faq: (website.faq as WebsiteFaq[] | null) ?? [],
         ctaText: website.ctaText,
         published: website.published,
         createdAt: website.createdAt.toISOString(),
@@ -35,13 +38,5 @@ export async function GET() {
   } catch (e: any) {
     console.error("[website get]", e);
     return NextResponse.json({ error: e?.message ?? "Server error" }, { status: 500 });
-  }
-}
-
-function safeParse(s: string): any {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return [];
   }
 }

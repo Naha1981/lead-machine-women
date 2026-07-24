@@ -1,7 +1,7 @@
-// Lead Machine — WhatsApp simulator (logs messages to DB; in production this would
-// call Evolution API. Here we record what *would* be sent so the dashboard can
-// show a realistic notification feed.)
-import { db } from "@/lib/db";
+// Lead Machine — WhatsApp simulator (persists messages via the whatsapp service;
+// in production this would call Evolution API — Phase 5). Records what *would*
+// be sent so the dashboard can show a realistic notification feed.
+import { createMessage } from "@/modules/whatsapp/service";
 
 export type WhatsAppSendResult = {
   ok: boolean;
@@ -35,16 +35,14 @@ Reference: #${opts.leadId.slice(-6).toUpperCase()}
 
 — ${opts.businessName}`;
 
-  const msg = await db.whatsAppMessage.create({
-    data: {
-      orgId: opts.orgId,
-      leadId: opts.leadId,
-      direction: "outbound",
-      phoneNumber: normalizePhone(opts.leadPhone),
-      content,
-      messageType: "text",
-      status: "sent",
-    },
+  const msg = await createMessage({
+    orgId: opts.orgId,
+    leadId: opts.leadId,
+    direction: "outbound",
+    phoneNumber: normalizePhone(opts.leadPhone),
+    content,
+    messageType: "text",
+    status: "sent",
   });
   return { ok: true, messageId: msg.id, content, to: msg.phoneNumber };
 }
@@ -74,16 +72,14 @@ Why: ${opts.reason}
 
 Call them within 2 hours to maximise conversion. ✅`;
 
-  const msg = await db.whatsAppMessage.create({
-    data: {
-      orgId: opts.orgId,
-      leadId: opts.leadId,
-      direction: "outbound",
-      phoneNumber: normalizePhone(opts.ownerPhone),
-      content,
-      messageType: "text",
-      status: "sent",
-    },
+  const msg = await createMessage({
+    orgId: opts.orgId,
+    leadId: opts.leadId,
+    direction: "outbound",
+    phoneNumber: normalizePhone(opts.ownerPhone),
+    content,
+    messageType: "text",
+    status: "sent",
   });
   return { ok: true, messageId: msg.id, content, to: msg.phoneNumber };
 }

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
 import { getCurrentOrg } from "@/lib/auth";
+import { getSubscriptionForOrg, setSubscriptionPlan } from "@/modules/billing/service";
 import { PLANS } from "@/lib/constants";
 
 const schema = z.object({
   plan: z.enum(["starter", "growth", "agency"]),
 });
+
+export const dynamic = "force-dynamic";
 
 // POST /api/billing/subscribe — "subscribe" to a plan (simulated Paystack)
 export async function POST(req: Request) {
@@ -20,39 +22,11 @@ export async function POST(req: Request) {
     const plan = PLANS.find((p) => p.id === parsed.data.plan);
     if (!plan) return NextResponse.json({ error: "Unknown plan" }, { status: 400 });
 
-    const now = new Date();
-    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    const existing = await db.subscription.findUnique({ where: { orgId: org.id } });
-    let sub;
-    if (existing) {
-      sub = await db.subscription.update({
-        where: { orgId: org.id },
-        data: {
-          plan: plan.id,
-          amountZar: plan.priceZar * 100,
-          status: "active",
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-          cancelledAt: null,
-        },
-      });
-    } else {
-      sub = await db.subscription.create({
-        data: {
-          orgId: org.id,
-          plan: plan.id,
-          amountZar: plan.priceZar * 100,
-          status: "active",
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-        },
-      });
-    }
-
-    await db.organization.update({
-      where: { id: org.id },
-      data: { plan: plan.id },
+    const sub = await setSubscriptionPlan({
+      orgId: org.id,
+      plan: plan.id,
+      amountZar: plan.priceZar * 100,
+      status: "active",
     });
 
     return NextResponse.json({
@@ -77,7 +51,7 @@ export async function GET() {
   try {
     const org = await getCurrentOrg();
     if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const sub = await db.subscription.findUnique({ where: { orgId: org.id } });
+    const sub = await getSubscriptionForOrg(org.id);
     if (!sub) return NextResponse.json({ subscription: null, orgPlan: org.plan });
     return NextResponse.json({
       subscription: {

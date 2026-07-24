@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
 import { getCurrentOrg } from "@/lib/auth";
 import { generateWebsiteContent } from "@/lib/ai";
+import { saveGeneratedWebsite } from "@/modules/websites/service";
 
 const schema = z.object({
   businessName: z.string().min(2).max(120),
@@ -10,6 +10,8 @@ const schema = z.object({
   services: z.string().max(1000),
   template: z.string().max(40).optional(),
 });
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
@@ -29,36 +31,16 @@ export async function POST(req: Request) {
       template: parsed.data.template,
     });
 
-    // Upsert website row for this org
-    const existing = await db.website.findUnique({ where: { orgId: org.id } });
-    let website;
-    if (existing) {
-      website = await db.website.update({
-        where: { orgId: org.id },
-        data: {
-          template: parsed.data.template ?? existing.template,
-          heroHeadline: content.heroHeadline,
-          heroSubtext: content.heroSubtext,
-          aboutText: content.aboutText,
-          services: JSON.stringify(content.services),
-          faq: JSON.stringify(content.faq),
-          ctaText: content.ctaText,
-        },
-      });
-    } else {
-      website = await db.website.create({
-        data: {
-          orgId: org.id,
-          template: parsed.data.template ?? "professional",
-          heroHeadline: content.heroHeadline,
-          heroSubtext: content.heroSubtext,
-          aboutText: content.aboutText,
-          services: JSON.stringify(content.services),
-          faq: JSON.stringify(content.faq),
-          ctaText: content.ctaText,
-        },
-      });
-    }
+    const website = await saveGeneratedWebsite({
+      orgId: org.id,
+      template: parsed.data.template,
+      heroHeadline: content.heroHeadline,
+      heroSubtext: content.heroSubtext,
+      aboutText: content.aboutText,
+      services: content.services,
+      faq: content.faq,
+      ctaText: content.ctaText,
+    });
 
     return NextResponse.json({
       website: {
@@ -68,8 +50,8 @@ export async function POST(req: Request) {
         heroHeadline: website.heroHeadline,
         heroSubtext: website.heroSubtext,
         aboutText: website.aboutText,
-        services: content.services,
-        faq: content.faq,
+        services: (website.services as { name: string; description: string }[] | null) ?? [],
+        faq: (website.faq as { question: string; answer: string }[] | null) ?? [],
         ctaText: website.ctaText,
         published: website.published,
         createdAt: website.createdAt.toISOString(),

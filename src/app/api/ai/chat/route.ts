@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
+import { getOrgBySlug } from "@/modules/orgs/service";
+import { getWebsiteForOrg } from "@/modules/websites/service";
 import { chatReply } from "@/lib/ai";
+import type { WebsiteFaq } from "@/modules/websites/service";
 
 const schema = z.object({
   slug: z.string().min(2).max(60),
@@ -18,6 +20,8 @@ const schema = z.object({
     .default([]),
 });
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -27,16 +31,11 @@ export async function POST(req: Request) {
     }
     const { slug, message, history } = parsed.data;
 
-    const org = await db.organization.findUnique({ where: { slug } });
+    const org = await getOrgBySlug(slug);
     if (!org) return NextResponse.json({ error: "Business not found" }, { status: 404 });
 
-    const website = await db.website.findUnique({ where: { orgId: org.id } });
-    let faq: { question: string; answer: string }[] = [];
-    if (website?.faq) {
-      try {
-        faq = JSON.parse(website.faq);
-      } catch {}
-    }
+    const website = await getWebsiteForOrg(org.id);
+    const faq: WebsiteFaq[] = (website?.faq as WebsiteFaq[] | null) ?? [];
 
     const reply = await chatReply({
       businessName: org.name,

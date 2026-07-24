@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
 import { getCurrentUser, getCurrentOrg } from "@/lib/auth";
+import { getOrgBySlug } from "@/modules/orgs/service";
+import { createLead, updateLeadFlags, listLeadsForOrg } from "@/modules/leads/service";
 import { qualifyLead } from "@/lib/ai";
 import { sendProspectConfirmation, sendOwnerNotification } from "@/lib/whatsapp";
+
+export const dynamic = "force-dynamic";
 
 // PUBLIC: POST /api/leads  — submit a lead from a public site (by slug)
 const publicSchema = z.object({
@@ -28,7 +31,7 @@ export async function POST(req: Request) {
     }
     const { slug, name, phone, email, serviceNeeded, message } = parsed.data;
 
-    const org = await db.organization.findUnique({ where: { slug } });
+    const org = await getOrgBySlug(slug);
     if (!org) return NextResponse.json({ error: "Business not found" }, { status: 404 });
 
     // 1) AI qualification
@@ -53,21 +56,19 @@ export async function POST(req: Request) {
     }
 
     // 2) Create lead
-    const lead = await db.lead.create({
-      data: {
-        orgId: org.id,
-        name,
-        phone,
-        email: email || null,
-        serviceNeeded: serviceNeeded || null,
-        message: message || null,
-        source: "website",
-        aiScore,
-        aiTemperature,
-        aiReason,
-        status: "new",
-        consentGiven: true,
-      },
+    const lead = await createLead({
+      orgId: org.id,
+      name,
+      phone,
+      email: email || null,
+      serviceNeeded: serviceNeeded || null,
+      message: message || null,
+      source: "website",
+      aiScore,
+      aiTemperature,
+      aiReason,
+      status: "new",
+      consentGiven: true,
     });
 
     // 3) WhatsApp confirmation to prospect + notification to owner (simulated)
@@ -105,10 +106,9 @@ export async function POST(req: Request) {
       }
     }
 
-    await db.lead.update({
-      where: { id: lead.id },
-      data: { whatsappSent, ownerNotified },
-    });
+    if (whatsappSent || ownerNotified) {
+      await updateLeadFlags(lead.id, { whatsappSent, ownerNotified });
+    }
 
     return NextResponse.json({
       ok: true,
@@ -135,15 +135,30 @@ export async function GET(req: Request) {
     const status = url.searchParams.get("status"); // 'all' or specific
     const temperature = url.searchParams.get("temperature");
 
-    const where: any = { orgId: org.id };
-    if (status && status !== "all") where.status = status;
-    if (temperature && temperature !== "all") where.aiTemperature = temperature;
-
-    const leads = await db.lead.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 200,
+    const leadRows = await listLeadsForOrg(org.id, {
+      status: status ?? undefined,
+      temperature: temperature ?? undefined,
     });
+
+    const leads = leadRows.map((l) => ({
+      id: l.id,
+      orgId: l.orgId,
+      name: l.name,
+      phone: l.phone,
+      email: l.email,
+      serviceNeeded: l.serviceNeeded,
+      message: l.message,
+      source: l.source,
+      aiScore: l.aiScore,
+      aiTemperature: l.aiTemperature,
+      aiReason: l.aiReason,
+      status: l.status,
+      whatsappSent: l.whatsappSent,
+      ownerNotified: l.ownerNotified,
+      consentGiven: l.consentGiven,
+      createdAt: l.createdAt.toISOString(),
+      updatedAt: l.updatedAt.toISOString(),
+    }));
 
     return NextResponse.json({ leads });
   } catch (e: any) {

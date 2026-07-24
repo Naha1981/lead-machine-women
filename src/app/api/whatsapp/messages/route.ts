@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { getCurrentOrg } from "@/lib/auth";
+import { listMessagesForOrg } from "@/modules/whatsapp/service";
+
+export const dynamic = "force-dynamic";
 
 // GET /api/whatsapp/messages — recent WhatsApp messages for the current org
 export async function GET() {
   try {
     const org = await getCurrentOrg();
     if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const messages = await db.whatsAppMessage.findMany({
-      where: { orgId: org.id },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      include: { lead: { select: { name: true, phone: true } } },
-    });
+    const messages = await listMessagesForOrg(org.id, 50);
     return NextResponse.json({
       messages: messages.map((m) => ({
         id: m.id,
@@ -21,7 +18,7 @@ export async function GET() {
         content: m.content,
         status: m.status,
         createdAt: m.createdAt.toISOString(),
-        lead: m.lead ? { name: m.lead.name, phone: m.lead.phone } : null,
+        lead: m.lead,
       })),
     });
   } catch (e: any) {
