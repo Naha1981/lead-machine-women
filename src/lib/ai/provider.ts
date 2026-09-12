@@ -7,12 +7,10 @@
 // endpoint at https://api.groq.com/openai/v1. Default model: openai/gpt-oss-120b.
 // Override via AI_MODEL env var.
 //
-// To switch back to paid OpenAI later: delete the `baseURL` line and change
-// GROQ_API_KEY → OPENAI_API_KEY in getModel() + isAIConfigured().
-//
-// BUILD RESILIENCE: GROQ_API_KEY is read LAZILY at call time (never at module
-// load). If no key is configured, getModel() throws AINotConfiguredError which
-// the AI functions catch and return as a structured error.
+// BUILD RESILIENCE: GROQ_API_KEY is read at call time. If no key is set,
+// getModel() throws AINotConfiguredError. The provider SDK itself is imported
+// normally because @ai-sdk/openai 4.x is ESM-only.
+import { createOpenAI } from "@ai-sdk/openai";
 
 export class AINotConfiguredError extends Error {
   code = "AI_NOT_CONFIGURED" as const;
@@ -36,25 +34,17 @@ export function isAIConfigured(): boolean {
  * Lazily create the AI model. Reads GROQ_API_KEY + AI_MODEL at call time.
  * Throws AINotConfiguredError if no key is set.
  *
- * Uses Groq's OpenAI-compatible endpoint (https://api.groq.com/openai/v1)
- * via the already-installed @ai-sdk/openai package — no new dependency needed.
- *
- * To switch to paid OpenAI: remove the `baseURL` option and use
- * `process.env.OPENAI_API_KEY` instead of `process.env.GROQ_API_KEY`.
+ * Uses Groq's OpenAI-compatible endpoint via @ai-sdk/openai.
  */
 export function getModel() {
-  if (!process.env.GROQ_API_KEY) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
     throw new AINotConfiguredError();
   }
-  // Lazy require so the provider is never loaded at build time.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { createOpenAI } = require("@ai-sdk/openai") as typeof import("@ai-sdk/openai");
 
-  // Groq exposes an OpenAI-compatible endpoint. We create an OpenAI client
-  // pointed at Groq's baseURL — same Vercel AI SDK, zero new packages.
   const groq = createOpenAI({
     baseURL: "https://api.groq.com/openai/v1",
-    apiKey: process.env.GROQ_API_KEY,
+    apiKey,
   });
 
   return groq(process.env.AI_MODEL || "openai/gpt-oss-120b");
