@@ -1,17 +1,13 @@
 // Lead Machine — AI service (Vercel AI SDK).
 //
 // Three AI features:
-//   1. generateWebsiteContent() — generateObject + Zod schema (website copy)
-//   2. qualifyLead()            — generateObject + Zod schema (lead scoring)
+//   1. generateWebsiteContent() — generateText + Output.object (website copy)
+//   2. qualifyLead()            — generateText + Output.object (lead scoring)
 //   3. streamChatReply()        — streamText (chatbot, streaming response)
 //
-// Provider-agnostic: routes through getModel() in provider.ts. Default model
-// gpt-4o-mini; override via AI_MODEL env var.
-//
-// BUILD RESILIENCE: OPENAI_API_KEY is read lazily inside getModel(). If no key
-// is configured, the AI functions throw AINotConfiguredError which the route
-// handlers catch and return as { error: { code: "AI_NOT_CONFIGURED" } }.
-import { generateObject, streamText } from "ai";
+// Provider-agnostic: routes through getModel() in provider.ts.
+// BUILD RESILIENCE: provider credentials are read lazily inside getModel().
+import { generateText, Output, streamText } from "ai";
 import { getModel, AINotConfiguredError } from "@/lib/ai/provider";
 import {
   generatedWebsiteContentSchema,
@@ -21,13 +17,8 @@ import {
 } from "@/lib/ai/schemas";
 import type { WebsiteFaq } from "@/types";
 
-// Re-export the types + error so existing imports from "@/lib/ai" still work
 export type { GeneratedWebsiteContent, LeadQualification };
 export { AINotConfiguredError };
-
-// ---------------------------------------------------------------------------
-// 1. Website generation
-// ---------------------------------------------------------------------------
 
 export async function generateWebsiteContent(opts: {
   businessName: string;
@@ -35,10 +26,9 @@ export async function generateWebsiteContent(opts: {
   services: string;
   template?: string;
 }): Promise<GeneratedWebsiteContent> {
-  const model = getModel(); // throws AINotConfiguredError if no key
+  const model = getModel();
 
   const system = `You are a conversion copywriter for South African SMEs. You write clear, trustworthy, benefit-driven website copy in South African English. Use South African spelling and tone. Make it sound professional and credible.`;
-
   const prompt = `Generate website content for a South African business.
 
 Business name: ${opts.businessName}
@@ -48,19 +38,15 @@ Template style: ${opts.template || "professional"}
 
 Generate the hero headline (punchy, includes the business name, max 12 words), hero subtext (one sentence explaining the value, max 25 words), about text (2-3 sentences, warm and professional), 3-5 services (name + one-sentence description), 3-5 FAQs (question + concise answer), and a short CTA (max 6 words).`;
 
-  const { object } = await generateObject({
+  const { output } = await generateText({
     model,
-    schema: generatedWebsiteContentSchema,
+    output: Output.object({ schema: generatedWebsiteContentSchema }),
     system,
     prompt,
   });
 
-  return object;
+  return output;
 }
-
-// ---------------------------------------------------------------------------
-// 2. Lead qualification
-// ---------------------------------------------------------------------------
 
 export async function qualifyLead(opts: {
   businessName: string;
@@ -71,10 +57,9 @@ export async function qualifyLead(opts: {
   serviceNeeded?: string;
   message?: string;
 }): Promise<LeadQualification> {
-  const model = getModel(); // throws AINotConfiguredError if no key
+  const model = getModel();
 
   const system = `You are an expert lead-qualification AI for South African SMEs. You score inbound leads based on intent, urgency, budget signals, and fit.`;
-
   const prompt = `Qualify this lead for a South African business.
 
 Business: ${opts.businessName} (${opts.industry})
@@ -93,24 +78,16 @@ Scoring guide:
 
 Score this lead and provide a reason + suggested next action.`;
 
-  const { object } = await generateObject({
+  const { output } = await generateText({
     model,
-    schema: leadQualificationSchema,
+    output: Output.object({ schema: leadQualificationSchema }),
     system,
     prompt,
   });
 
-  return object;
+  return output;
 }
 
-// ---------------------------------------------------------------------------
-// 3. Chatbot (streaming)
-// ---------------------------------------------------------------------------
-
-/**
- * Stream a chatbot reply for a website visitor. Returns a Response with a
- * text stream (compatible with `await res.text()` on the client).
- */
 export async function streamChatReply(opts: {
   businessName: string;
   industry: string;
@@ -119,12 +96,10 @@ export async function streamChatReply(opts: {
   message: string;
   history?: { role: "user" | "assistant"; content: string }[];
 }): Promise<Response> {
-  const model = getModel(); // throws AINotConfiguredError if no key
-
+  const model = getModel();
   const faqText = opts.faq.length
     ? opts.faq.map((f) => `Q: ${f.question}\nA: ${f.answer}`).join("\n\n")
     : "(no FAQ provided)";
-
   const system = `You are the friendly AI assistant for ${opts.businessName}, a South African ${opts.industry} business.
 
 Services offered: ${opts.services}
@@ -141,30 +116,15 @@ Your job:
 
   const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
     { role: "system", content: system },
-    ...(opts.history ?? []).map((h) => ({
-      role: h.role,
-      content: h.content,
-    })),
+    ...(opts.history ?? []).map((h) => ({ role: h.role, content: h.content })),
     { role: "user", content: opts.message },
   ];
 
-  const result = streamText({
-    model,
-    messages,
-  });
-
-  // Return a text stream response. The client reads it via `await res.text()`.
+  const result = streamText({ model, messages });
   return result.toTextStreamResponse();
 }
 
-// ---------------------------------------------------------------------------
-// Legacy non-streaming chatReply (kept for backward compat; delegates to stream)
-// ---------------------------------------------------------------------------
-
-/**
- * @deprecated Use streamChatReply() for streaming. This non-streaming wrapper
- * is kept for any code that still expects a string return.
- */
+/** @deprecated Use streamChatReply() for streaming. */
 export async function chatReply(opts: {
   businessName: string;
   industry: string;
