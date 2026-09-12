@@ -1,1 +1,0 @@
-Billing guard work is developed on a dedicated branch.
