@@ -9,6 +9,35 @@ import { sendLeadNotifications } from "@/modules/notifications/service";
 
 export const dynamic = "force-dynamic";
 
+// Lightweight in-process rate limiting for public lead submissions.
+// Multi-instance deployments should add an edge/shared limiter for stronger guarantees.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 10;
+const requestCounts = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
+  return req.headers.get("x-real-ip") || "unknown";
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const current = requestCounts.get(ip);
+  if (!current || current.resetAt <= now) {
+    requestCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    if (requestCounts.size > 5000) {
+      for (const [key, value] of requestCounts) {
+        if (value.resetAt <= now) requestCounts.delete(key);
+      }
+    }
+    return false;
+  }
+
+  current.count += 1;
+  return current.count > RATE_LIMIT_MAX;
+}
+
 // PUBLIC: POST /api/leads — submit a lead from a public site (by slug)
 // NO AUTH REQUIRED — this is the core revenue flow (visitor → lead).
 const publicSchema = z.object({
@@ -23,6 +52,19 @@ const publicSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req);
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again shortly." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
+
+    const contentLength = Number(req.headers.get("content-length") ?? "0");
+    if (contentLength > 25_000) {
+      return NextResponse.json({ error: "Request body too large" }, { status: 413 });
+    }
+
     const body = await req.json();
     const parsed = publicSchema.safeParse(body);
     if (!parsed.success) {
@@ -36,7 +78,7 @@ export async function POST(req: Request) {
     const org = await getOrgBySlug(slug);
     if (!org) return NextResponse.json({ error: "Business not found" }, { status: 404 });
 
-    // 1) AI qualification
+    // AI qualification is enrichment only; lead capture must survive AI outages.
     let aiScore: number | null = null;
     let aiTemperature: "hot" | "warm" | "cold" | null = null;
     let aiReason: string | null = null;
@@ -57,7 +99,6 @@ export async function POST(req: Request) {
       console.error("[qualifyLead]", e);
     }
 
-    // 2) Create lead
     const lead = await createLead({
       orgId: org.id,
       name,
@@ -73,8 +114,6 @@ export async function POST(req: Request) {
       consentGiven: true,
     });
 
-    // 3) WhatsApp notifications (owner + prospect) via Evolution API or simulate.
-    // NEVER throws — failures are logged but don't break lead capture.
     let whatsappSent = false;
     let ownerNotified = false;
     try {
