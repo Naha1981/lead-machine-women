@@ -414,15 +414,16 @@ export function AuditWorkspaceTab() {
                   )}
 
                   {project.status === "verified" && project.verification && (
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="inline-flex items-center gap-1.5 font-medium text-emerald-700">
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs">
+                      <div className="flex flex-wrap items-center gap-2 font-medium text-emerald-800">
                         <CheckCircle2 className="size-4" />
                         Before/after proof recorded
-                      </span>
-                      <span className="text-slate-500">
-                        {project.verification.beforeScore} → {project.verification.afterScore}
-                        ({project.verification.scoreDelta >= 0 ? "+" : ""}{project.verification.scoreDelta})
-                      </span>
+                      </div>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                        <MiniProof label="Score" value={`${project.verification.beforeScore} → ${project.verification.afterScore} (${project.verification.scoreDelta >= 0 ? "+" : ""}${project.verification.scoreDelta})`} />
+                        <MiniProof label="Resolved" value={String(project.verification.resolvedFindingIds.length)} />
+                        <MiniProof label="Still present" value={String(project.verification.remainingFindingIds.length)} />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -440,6 +441,16 @@ function Metric({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-slate-200 bg-white p-3">
       <p className="text-[10px] uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+
+function MiniProof({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-emerald-100 bg-white p-2">
+      <p className="text-[10px] uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-1 font-semibold text-slate-800">{value}</p>
     </div>
   );
 }
