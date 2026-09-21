@@ -38,6 +38,16 @@ export type AuditImplementation = {
   updatedAt: string;
 };
 
+export type AuditVerification = {
+  beforeScore: number;
+  afterScore: number;
+  scoreDelta: number;
+  resolvedFindingIds: string[];
+  remainingFindingIds: string[];
+  reAudit: AuditResult;
+  verifiedAt: string;
+};
+
 export type AuditProject = {
   id: string;
   audit: AuditResult;
@@ -45,6 +55,7 @@ export type AuditProject = {
   status: AuditProjectStatus;
   repository?: AuditRepositoryBinding;
   implementation?: AuditImplementation;
+  verification?: AuditVerification;
   createdAt: string;
   updatedAt: string;
 };
@@ -56,6 +67,7 @@ type ProjectPayload = {
   status: AuditProjectStatus;
   repository?: AuditRepositoryBinding;
   implementation?: AuditImplementation;
+  verification?: AuditVerification;
 };
 
 function projectFromEvent(row: typeof events.$inferSelect): AuditProject | null {
@@ -68,6 +80,7 @@ function projectFromEvent(row: typeof events.$inferSelect): AuditProject | null 
     status: payload.status ?? "diagnosed",
     repository: payload.repository,
     implementation: payload.implementation,
+    verification: payload.verification,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.createdAt.toISOString(),
   };
@@ -81,6 +94,7 @@ function payloadFor(project: AuditProject): ProjectPayload {
     status: project.status,
     repository: project.repository,
     implementation: project.implementation,
+    verification: project.verification,
   };
 }
 
@@ -234,6 +248,48 @@ export async function updateAuditProjectCi(opts: {
     orgId: opts.orgId,
     userId: opts.userId,
     eventType: "audit.project.ci_updated",
+    payload: payloadFor(next),
+  });
+
+  return next;
+}
+
+
+export async function verifyAuditProject(opts: {
+  orgId: string;
+  userId: string;
+  projectId: string;
+  reAudit: AuditResult;
+}): Promise<AuditProject | null> {
+  const current = (await listAuditProjects(opts.orgId)).find((item) => item.id === opts.projectId);
+  if (!current) return null;
+  if (current.status !== "deployed") {
+    throw new Error("The project must be recorded as deployed before the live-site re-audit.");
+  }
+
+  const beforeIds = new Set(current.audit.findings.map((finding) => finding.id));
+  const afterIds = new Set(opts.reAudit.findings.map((finding) => finding.id));
+  const resolvedFindingIds = [...beforeIds].filter((id) => !afterIds.has(id));
+  const remainingFindingIds = [...afterIds].filter((id) => beforeIds.has(id));
+  const verifiedAt = new Date().toISOString();
+
+  const verification = {
+    beforeScore: current.audit.score,
+    afterScore: opts.reAudit.score,
+    scoreDelta: opts.reAudit.score - current.audit.score,
+    resolvedFindingIds,
+    remainingFindingIds,
+    reAudit: opts.reAudit,
+    verifiedAt,
+  } satisfies AuditVerification;
+
+  const updatedAt = verifiedAt;
+  const next = { ...current, status: "verified" as const, verification, updatedAt };
+
+  await emitEvent({
+    orgId: opts.orgId,
+    userId: opts.userId,
+    eventType: "audit.project.verified",
     payload: payloadFor(next),
   });
 
