@@ -228,6 +228,8 @@ export function getGitHubAppRegistrationUrl() {
   params.set("url", appUrl);
   params.set("public", "true");
   params.append("callback_urls[]", `${appUrl}/api/audit/projects/github/callback`);
+  params.set("setup_url", `${appUrl}/api/audit/projects/github/callback`);
+  params.set("setup_on_update", "true");
   params.set("contents", "write");
   params.set("pull_requests", "write");
   params.set("actions", "read");
