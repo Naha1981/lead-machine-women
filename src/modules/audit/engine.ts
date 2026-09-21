@@ -252,8 +252,19 @@ async function fetchPage(start: URL): Promise<PageFetch> {
 
 async function aux(base: URL, path: string) {
   try {
-    const result = await fetchPage(new URL(path, base));
-    return result.status >= 200 && result.status < 400;
+    const target = new URL(path, base);
+    await assertSafeTarget(target);
+    const response = await fetch(target, {
+      method: "GET",
+      redirect: "manual",
+      cache: "no-store",
+      headers: {
+        "user-agent": USER_AGENT,
+        accept: "text/plain,application/xml,text/xml,*/*;q=0.8",
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+    return response.status >= 200 && response.status < 400;
   } catch {
     return false;
   }
