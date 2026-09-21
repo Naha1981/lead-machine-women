@@ -40,6 +40,7 @@ const STATUS_LABEL: Record<AuditProjectStatus, string> = {
 
 export function AuditWorkspaceTab() {
   const { data, loading, error, reload } = useAsync(() => apiClient.listAuditProjects(), []);
+  const { data: session } = useAsync(() => apiClient.me(), []);
   const [url, setUrl] = React.useState("");
   const [repoByProject, setRepoByProject] = React.useState<Record<string, string>>({});
   const [authByProject, setAuthByProject] = React.useState<Record<string, boolean>>({});
@@ -185,6 +186,20 @@ export function AuditWorkspaceTab() {
           <p className="mt-2 text-xs text-slate-500">
             No client code is changed during diagnosis. Repository access is a separate explicit authorisation step.
           </p>
+          {session?.org?.slug && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-white p-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Standalone Lead Machine URL</p>
+                <p className="mt-1 text-sm font-medium text-slate-900">/go/{session.org.slug}</p>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <a href={`/go/${encodeURIComponent(session.org.slug)}`} target="_blank" rel="noreferrer">
+                  Open share URL
+                  <ExternalLink className="ml-1.5 size-3.5" />
+                </a>
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
