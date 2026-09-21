@@ -6,7 +6,7 @@ import {
   updateAuditProjectCi,
 } from "@/modules/audit/project-service";
 import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
-import { getGitHubCheckRuns, getGitHubPullRequest } from "@/lib/github";
+import { createGitHubInstallationToken, getGitHubCheckRuns, getGitHubPullRequest } from "@/lib/github";
 
 export const dynamic = "force-dynamic";
 
@@ -33,10 +33,19 @@ export async function POST(req: Request) {
     if (!project?.repository || !project.implementation) {
       return NextResponse.json({ error: "No implementation PR is connected to this project." }, { status: 409 });
     }
+    if (project.repository.provider !== "github-app" || !project.repository.installationId) {
+      return NextResponse.json({ error: "Reconnect the repository through the GitHub App." }, { status: 409 });
+    }
+
+    const installationToken = await createGitHubInstallationToken(
+      project.repository.installationId,
+      project.repository.repositoryFullName
+    );
 
     const pr = await getGitHubPullRequest(
       project.repository.repositoryFullName,
-      project.implementation.pullRequestNumber
+      project.implementation.pullRequestNumber,
+      installationToken
     );
 
     if (pr.merged) {
@@ -54,7 +63,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "GitHub did not return the PR head commit." }, { status: 502 });
     }
 
-    const checks = await getGitHubCheckRuns(project.repository.repositoryFullName, headSha);
+    const checks = await getGitHubCheckRuns(
+      project.repository.repositoryFullName,
+      headSha,
+      installationToken
+    );
     const runs = checks.check_runs ?? [];
 
     let status: "awaiting-ci" | "ci-passed" | "ci-failed" | "ready-for-client-review";
