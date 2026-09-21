@@ -56,7 +56,7 @@ function buildBranchName(projectId: string, domain: string) {
 }
 
 function importSpecifiers(content: string) {
-  return [...content.matchAll(/^\\s*import(?:.|\\n)*?from\\s*[\\"']([^\\"']+)[\\"']/gm)]
+  return [...content.matchAll(/^\s*import\s+(?:type\s+)?(?:.+?\s+from\s+)?["']([^"']+)["'];?/gm)]
     .map((match) => match[1])
     .filter(Boolean);
 }
@@ -235,7 +235,7 @@ export async function POST(req: Request) {
         "- NahaLabs does not deploy this project.",
         "- Client engineering owns review, merge and deployment.",
         "- The project should be re-audited after the client deployment.",
-      ].join("\\n"),
+      ].join("\n"),
       head: branchName,
       base: project.repository.baseBranch,
       draft: true,
