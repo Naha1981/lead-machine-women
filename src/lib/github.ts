@@ -77,8 +77,8 @@ async function githubRequest<T>(path: string, init: RequestInit = {}): Promise<T
 }
 
 export function normalizeRepoFullName(value: string) {
-  const repo = value.trim().replace(/^https?:\\/\\/github\\.com\\//, "").replace(/\\.git$/, "");
-  if (!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(repo)) {
+  const repo = value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "");
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
     throw new Error("Use a GitHub repository in owner/name format.");
   }
   return repo;
