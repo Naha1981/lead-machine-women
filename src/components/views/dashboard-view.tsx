@@ -28,6 +28,7 @@ export default function DashboardView() {
       {tab === "overview" && <OverviewTab />}
       {tab === "leads" && <LeadsTab />}
       {tab === "website" && <WebsiteTab />}
+      {tab === "audit" && <AuditWorkspaceTab />}
       {tab === "settings" && <SettingsTab />}
       {tab === "billing" && <BillingTab />}
     </DashboardShell>
