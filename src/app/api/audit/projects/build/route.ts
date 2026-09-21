@@ -39,7 +39,7 @@ function pickCandidatePaths(paths: string[]) {
   if (priority.length) return priority.slice(0, 3);
 
   return paths
-    .filter((path) => /\\.(tsx|jsx|ts|js)$/.test(path))
+    .filter((path) => /\.(tsx|jsx|ts|js)$/.test(path))
     .filter(isSafeImplementationPath)
     .filter((path) => !/(test|spec|storybook|stories)/i.test(path))
     .sort((a, b) => {
