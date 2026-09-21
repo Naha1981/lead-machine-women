@@ -140,16 +140,27 @@ export function AuditWorkspaceTab() {
     }
   }
 
-  async function recordDeploymentAndVerify(project: AuditProject) {
+  async function recordDeployment(project: AuditProject) {
     setBusyProject(project.id);
     try {
       await apiClient.updateAuditProjectStatus(project.id, "deployed");
+      reload();
+      toast.success("Client deployment recorded. Re-audit the live site once the deployment is visible.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not record deployment.");
+    } finally {
+      setBusyProject(null);
+    }
+  }
+
+  async function verifyDeployment(project: AuditProject) {
+    setBusyProject(project.id);
+    try {
       await apiClient.verifyAuditProject(project.id);
       reload();
-      toast.success("Deployment recorded and the live site has been re-audited.");
+      toast.success("Live deployment re-audited and before/after proof recorded.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not complete deployment verification.");
-      reload();
+      toast.error(e instanceof Error ? e.message : "Could not verify deployment.");
     } finally {
       setBusyProject(null);
     }
@@ -380,9 +391,9 @@ export function AuditWorkspaceTab() {
                         )}
                         {implStatus === "merged" && project.status === "building" && (
                           <div className="mt-3">
-                            <Button size="sm" onClick={() => recordDeploymentAndVerify(project)} disabled={isBusy}>
+                            <Button size="sm" onClick={() => recordDeployment(project)} disabled={isBusy}>
                               {isBusy ? <RefreshCw className="mr-1.5 size-3.5 animate-spin" /> : null}
-                              Record deployment + re-audit
+                              Record client deployment
                               <ArrowRight className="ml-1.5 size-3.5" />
                             </Button>
                           </div>
@@ -408,7 +419,8 @@ export function AuditWorkspaceTab() {
                   )}
 
                   {project.status === "deployed" && !project.verification && (
-                    <Button size="sm" onClick={() => apiClient.verifyAuditProject(project.id).then(reload).catch((e) => toast.error(e instanceof Error ? e.message : "Verification failed."))} disabled={isBusy}>
+                    <Button size="sm" onClick={() => verifyDeployment(project)} disabled={isBusy}>
+                      {isBusy ? <RefreshCw className="mr-1.5 size-3.5 animate-spin" /> : null}
                       Re-audit live site
                     </Button>
                   )}
