@@ -18,7 +18,10 @@ export type EventType =
   | "subscription.created"
   | "subscription.updated"
   | "audit.completed"
-  | "audit.lead_captured";
+  | "audit.lead_captured"
+  | "audit.project.created"
+  | "audit.project.status_changed"
+  | "audit.project.verified";
 
 /**
  * Append a domain event. Never throws — event emission is best-effort so it can
