@@ -128,6 +128,21 @@ export function AuditWorkspaceTab() {
     }
   }
 
+  async function recordDeploymentAndVerify(project: AuditProject) {
+    setBusyProject(project.id);
+    try {
+      await apiClient.updateAuditProjectStatus(project.id, "deployed");
+      await apiClient.verifyAuditProject(project.id);
+      reload();
+      toast.success("Deployment recorded and the live site has been re-audited.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not complete deployment verification.");
+      reload();
+    } finally {
+      setBusyProject(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -329,8 +344,9 @@ export function AuditWorkspaceTab() {
                         )}
                         {implStatus === "merged" && project.status === "building" && (
                           <div className="mt-3">
-                            <Button size="sm" onClick={() => move(project.id, "deployed")} disabled={isBusy}>
-                              Record client deployment
+                            <Button size="sm" onClick={() => recordDeploymentAndVerify(project)} disabled={isBusy}>
+                              {isBusy ? <RefreshCw className="mr-1.5 size-3.5 animate-spin" /> : null}
+                              Record deployment + re-audit
                               <ArrowRight className="ml-1.5 size-3.5" />
                             </Button>
                           </div>
@@ -355,18 +371,23 @@ export function AuditWorkspaceTab() {
                     </Button>
                   )}
 
-                  {project.status === "deployed" && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
-                      <CircleDot className="size-4" />
-                      Re-audit before verification
-                    </span>
+                  {project.status === "deployed" && !project.verification && (
+                    <Button size="sm" onClick={() => apiClient.verifyAuditProject(project.id).then(reload).catch((e) => toast.error(e instanceof Error ? e.message : "Verification failed."))} disabled={isBusy}>
+                      Re-audit live site
+                    </Button>
                   )}
 
-                  {project.status === "verified" && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-                      <CheckCircle2 className="size-4" />
-                      Before/after proof recorded
-                    </span>
+                  {project.status === "verified" && project.verification && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="inline-flex items-center gap-1.5 font-medium text-emerald-700">
+                        <CheckCircle2 className="size-4" />
+                        Before/after proof recorded
+                      </span>
+                      <span className="text-slate-500">
+                        {project.verification.beforeScore} → {project.verification.afterScore}
+                        ({project.verification.scoreDelta >= 0 ? "+" : ""}{project.verification.scoreDelta})
+                      </span>
+                    </div>
                   )}
                 </div>
               </CardContent>
