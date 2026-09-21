@@ -74,6 +74,12 @@ export const apiClient = {
       body: JSON.stringify({ projectId }),
     }),
 
+  verifyAuditProject: (projectId: string) =>
+    api<{ project: any; verification: any }>("/api/audit/projects/verify", {
+      method: "POST",
+      body: JSON.stringify({ projectId }),
+    }),
+
   reQualify: (leadId: string) =>
     api<{ lead: Lead; qualification: any }>("/api/ai/qualify-lead", { method: "POST", body: JSON.stringify({ leadId }) }),
   chat: async (body: { slug: string; message: string; history?: { role: "user" | "assistant"; content: string }[] }): Promise<{ reply: string }> => {
