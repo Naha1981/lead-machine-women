@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   ArrowRight,
   CheckCircle2,
+  CircleDot,
   ExternalLink,
   Globe2,
   Plus,
@@ -40,11 +41,13 @@ const STATUS_LABEL: Record<AuditProjectStatus, string> = {
 export function AuditWorkspaceTab() {
   const { data, loading, error, reload } = useAsync(() => apiClient.listAuditProjects(), []);
   const [url, setUrl] = React.useState("");
-  const [scanning, setScanning] = React.useState(false);
+  const [repoByProject, setRepoByProject] = React.useState<Record<string, string>>({});
+  const [authByProject, setAuthByProject] = React.useState<Record<string, boolean>>({});
+  const [busyProject, setBusyProject] = React.useState<string | null>(null);
 
   async function startAudit(event: React.FormEvent) {
     event.preventDefault();
-    setScanning(true);
+    setBusyProject("new");
     try {
       const audit = await apiClient.runAudit(url.trim());
       await apiClient.createAuditProject(audit);
@@ -54,17 +57,74 @@ export function AuditWorkspaceTab() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Audit failed.");
     } finally {
-      setScanning(false);
+      setBusyProject(null);
     }
   }
 
   async function move(projectId: string, status: AuditProjectStatus) {
+    setBusyProject(projectId);
     try {
       await apiClient.updateAuditProjectStatus(projectId, status);
       reload();
       toast.success(`Project moved to ${STATUS_LABEL[status]}.`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not update project.");
+    } finally {
+      setBusyProject(null);
+    }
+  }
+
+  async function connectRepository(project: AuditProject) {
+    const repositoryFullName = repoByProject[project.id]?.trim();
+    if (!repositoryFullName) {
+      toast.error("Enter the GitHub repository in owner/name format.");
+      return;
+    }
+    if (!authByProject[project.id]) {
+      toast.error("Confirm that the client has explicitly authorised NahaLabs access to this repository.");
+      return;
+    }
+
+    setBusyProject(project.id);
+    try {
+      await apiClient.connectAuditRepository({
+        projectId: project.id,
+        repositoryFullName,
+        baseBranch: "main",
+        authorizationConfirmed: true,
+      });
+      reload();
+      toast.success("Authorised repository connected and access verified.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not connect repository.");
+    } finally {
+      setBusyProject(null);
+    }
+  }
+
+  async function build(project: AuditProject) {
+    setBusyProject(project.id);
+    try {
+      const result = await apiClient.buildAuditImplementation(project.id);
+      reload();
+      toast.success(`Draft PR #${result.pullRequest.number} created. Client CI now owns the verification gate.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not build implementation.");
+    } finally {
+      setBusyProject(null);
+    }
+  }
+
+  async function syncImplementation(project: AuditProject) {
+    setBusyProject(project.id);
+    try {
+      await apiClient.syncAuditImplementation(project.id);
+      reload();
+      toast.success("GitHub PR and CI status refreshed.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not refresh implementation status.");
+    } finally {
+      setBusyProject(null);
     }
   }
 
@@ -89,7 +149,7 @@ export function AuditWorkspaceTab() {
             Revenue Leak Fix Workspace
           </CardTitle>
           <CardDescription>
-            Diagnose → approve → build → deploy → verify. The audit is the work order.
+            Diagnose → approve → authorise → build → client CI → deploy → verify. The audit is the work order.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
@@ -102,13 +162,13 @@ export function AuditWorkspaceTab() {
               required
               className="h-11"
             />
-            <Button disabled={scanning} className="h-11 bg-emerald-600 hover:bg-emerald-700">
-              {scanning ? <RefreshCw className="mr-2 size-4 animate-spin" /> : <Plus className="mr-2 size-4" />}
-              {scanning ? "Auditing..." : "New audit"}
+            <Button disabled={busyProject === "new"} className="h-11 bg-emerald-600 hover:bg-emerald-700">
+              {busyProject === "new" ? <RefreshCw className="mr-2 size-4 animate-spin" /> : <Plus className="mr-2 size-4" />}
+              {busyProject === "new" ? "Auditing..." : "New audit"}
             </Button>
           </form>
           <p className="mt-2 text-xs text-slate-500">
-            This runs the same rules-first engine as the public audit. No client code is changed.
+            No client code is changed during diagnosis. Repository access is a separate explicit authorisation step.
           </p>
         </CardContent>
       </Card>
@@ -125,16 +185,18 @@ export function AuditWorkspaceTab() {
             <Globe2 className="size-10 text-slate-300" />
             <h3 className="mt-4 text-lg font-semibold text-slate-900">No fix projects yet</h3>
             <p className="mt-1 max-w-md text-sm text-slate-500">
-              Run the first audit above. Every finding will become a concrete implementation checklist.
+              Run the first audit above. Every finding becomes an implementation work item.
             </p>
           </CardContent>
         </Card>
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        {(data?.projects ?? []).map((project) => {
+        {(data?.projects ?? []).map((project: AuditProject) => {
           const currentIndex = STATUS_ORDER.indexOf(project.status);
           const nextStatus = STATUS_ORDER[currentIndex + 1];
+          const isBusy = busyProject === project.id;
+          const implStatus = project.implementation?.status;
 
           return (
             <Card key={project.id} className="overflow-hidden">
@@ -177,6 +239,107 @@ export function AuditWorkspaceTab() {
                   </ul>
                 </div>
 
+                {project.status === "approved" && !project.repository && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <p className="text-sm font-semibold text-amber-950">1. Authorise the client repository</p>
+                    <p className="mt-1 text-xs text-amber-900">
+                      The client keeps ownership. NahaLabs creates a branch and PR only after repository access is explicitly authorised and verified.
+                    </p>
+                    <div className="mt-3 space-y-3">
+                      <Input
+                        value={repoByProject[project.id] ?? ""}
+                        onChange={(event) =>
+                          setRepoByProject((current) => ({ ...current, [project.id]: event.target.value }))
+                        }
+                        placeholder="client-org/client-website"
+                        disabled={isBusy}
+                      />
+                      <label className="flex items-start gap-2 text-xs text-amber-900">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={authByProject[project.id] ?? false}
+                          onChange={(event) =>
+                            setAuthByProject((current) => ({ ...current, [project.id]: event.target.checked }))
+                          }
+                          disabled={isBusy}
+                        />
+                        <span>I confirm the client has explicitly authorised NahaLabs to access this repository and create a reviewable pull request. NahaLabs will not merge or deploy it.</span>
+                      </label>
+                      <Button size="sm" onClick={() => connectRepository(project)} disabled={isBusy}>
+                        {isBusy ? <RefreshCw className="mr-1.5 size-3.5 animate-spin" /> : <ShieldCheck className="mr-1.5 size-3.5" />}
+                        {isBusy ? "Verifying..." : "Connect authorised repo"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {project.repository && (
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Authorised repository</p>
+                        <p className="mt-1 text-sm font-medium text-slate-900">{project.repository.repositoryFullName}</p>
+                        <p className="text-xs text-slate-500">Base branch: {project.repository.baseBranch}</p>
+                      </div>
+                      <CircleDot className="size-4 text-emerald-600" />
+                    </div>
+                    {!project.implementation && project.status === "approved" && (
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Button size="sm" onClick={() => build(project)} disabled={isBusy}>
+                          {isBusy ? <RefreshCw className="mr-1.5 size-3.5 animate-spin" /> : <Wrench className="mr-1.5 size-3.5" />}
+                          {isBusy ? "Building..." : "Start building"}
+                        </Button>
+                        <span className="text-xs text-slate-500">Creates a draft PR. No merge or deployment.</span>
+                      </div>
+                    )}
+                    {project.implementation && (
+                      <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Implementation PR</p>
+                            <p className="mt-1 text-sm font-medium text-slate-900">#{project.implementation.pullRequestNumber}</p>
+                          </div>
+                          <Badge variant="outline">{project.implementation.status}</Badge>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-600">
+                          Changed: {project.implementation.changedFiles.join(", ")}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={project.implementation.pullRequestUrl} target="_blank" rel="noreferrer">
+                              <ExternalLink className="mr-1.5 size-3.5" />
+                              Open PR
+                            </a>
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => syncImplementation(project)} disabled={isBusy}>
+                            <RefreshCw className={`mr-1.5 size-3.5 ${isBusy ? "animate-spin" : ""}`} />
+                            Refresh CI
+                          </Button>
+                        </div>
+                        {implStatus === "ci-passed" && (
+                          <p className="mt-2 text-xs font-medium text-emerald-700">
+                            CI passed. Client engineering can review and merge the draft PR.
+                          </p>
+                        )}
+                        {implStatus === "ci-failed" && (
+                          <p className="mt-2 text-xs font-medium text-red-700">
+                            CI failed. The client team can review the failed checks before any merge.
+                          </p>
+                        )}
+                        {implStatus === "merged" && project.status === "building" && (
+                          <div className="mt-3">
+                            <Button size="sm" onClick={() => move(project.id, "deployed")} disabled={isBusy}>
+                              Record client deployment
+                              <ArrowRight className="ml-1.5 size-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" asChild>
                     <a href={project.audit.finalUrl} target="_blank" rel="noreferrer">
@@ -184,15 +347,25 @@ export function AuditWorkspaceTab() {
                       Open site
                     </a>
                   </Button>
-                  {nextStatus && (
-                    <Button size="sm" onClick={() => move(project.id, nextStatus)} className="bg-emerald-600 hover:bg-emerald-700">
-                      {nextStatus === "building" ? "Start building" : nextStatus === "deployed" ? "Mark deployed" : nextStatus === "verified" ? "Mark verified" : "Approve"}
+
+                  {!project.repository && project.status === "diagnosed" && nextStatus === "approved" && (
+                    <Button size="sm" onClick={() => move(project.id, "approved")} disabled={isBusy} className="bg-emerald-600 hover:bg-emerald-700">
+                      Approve Fix Pack
                       <ArrowRight className="ml-1.5 size-3.5" />
                     </Button>
                   )}
+
+                  {project.status === "deployed" && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
+                      <CircleDot className="size-4" />
+                      Re-audit before verification
+                    </span>
+                  )}
+
                   {project.status === "verified" && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-                      <CheckCircle2 className="size-4" /> Ready for before/after proof
+                      <CheckCircle2 className="size-4" />
+                      Before/after proof recorded
                     </span>
                   )}
                 </div>
