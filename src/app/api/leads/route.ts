@@ -45,6 +45,7 @@ const publicSchema = z.object({
   email: z.string().email().max(255).optional().or(z.literal("")),
   serviceNeeded: z.string().max(200).optional().or(z.literal("")),
   message: z.string().max(2000).optional().or(z.literal("")),
+  source: z.enum(["website", "standalone"]).default("website"),
   consentGiven: z.boolean(),
 });
 
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
     if (!parsed.data.consentGiven) {
       return NextResponse.json({ error: "POPIA consent is required." }, { status: 400 });
     }
-    const { slug, name, phone, email, serviceNeeded, message } = parsed.data;
+    const { slug, name, phone, email, serviceNeeded, message, source } = parsed.data;
 
     const org = await getOrgBySlug(slug);
     if (!org) return NextResponse.json({ error: "Business not found" }, { status: 404 });
@@ -103,7 +104,7 @@ export async function POST(req: Request) {
       email: email || null,
       serviceNeeded: serviceNeeded || null,
       message: message || null,
-      source: "website",
+      source,
       aiScore,
       aiTemperature,
       aiReason,
