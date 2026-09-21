@@ -89,18 +89,18 @@ function decodeEntities(value: string) {
 function stripTags(value: string) {
   return decodeEntities(
     value
-      .replace(/<!--[\\s\\S]*?-->/g, " ")
-      .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, " ")
-      .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, " ")
-      .replace(/<noscript\\b[^>]*>[\\s\\S]*?<\\/noscript>/gi, " ")
-      .replace(/<svg\\b[^>]*>[\\s\\S]*?<\\/svg>/gi, " ")
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+      .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, " ")
+      .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, " ")
       .replace(/<[^>]+>/g, " ")
   );
 }
 
 function attrs(tag: string): Record<string, string> {
   const out: Record<string, string> = {};
-  const pattern = /([:\\w-]+)\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/g;
+  const pattern = /([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g;
   for (const match of tag.matchAll(pattern)) {
     out[match[1].toLowerCase()] = decodeEntities(match[2] || match[3] || match[4] || "");
   }
@@ -114,7 +114,7 @@ function tags(html: string, tagName: string) {
 }
 
 function titleOf(html: string) {
-  const match = html.match(/<title\\b[^>]*>([\\s\\S]*?)<\\/title>/i);
+  const match = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
   return match ? stripTags(match[1]) : "";
 }
 
@@ -133,12 +133,12 @@ function meta(html: string, name: string, property?: string) {
 function hasRel(html: string, rel: string) {
   return tags(html, "link").some(function (tag) {
     const a = attrs(tag);
-    return (a.rel || "").toLowerCase().split(/\\s+/).includes(rel.toLowerCase());
+    return (a.rel || "").toLowerCase().split(/\s+/).includes(rel.toLowerCase());
   });
 }
 
 function links(html: string) {
-  return Array.from(html.matchAll(/<a\\b([^>]*)>([\\s\\S]*?)<\\/a>/gi)).map(function (m) {
+  return Array.from(html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)).map(function (m) {
     const a = attrs(m[0]);
     return { href: a.href || "", text: stripTags(m[2]).toLowerCase() };
   });
@@ -146,8 +146,8 @@ function links(html: string) {
 
 function interactiveText(html: string) {
   const results: string[] = [];
-  for (const m of html.matchAll(/<button\\b[^>]*>([\\s\\S]*?)<\\/button>/gi)) results.push(stripTags(m[1]).toLowerCase());
-  for (const m of html.matchAll(/<a\\b[^>]*>([\\s\\S]*?)<\\/a>/gi)) results.push(stripTags(m[1]).toLowerCase());
+  for (const m of html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/gi)) results.push(stripTags(m[1]).toLowerCase());
+  for (const m of html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)) results.push(stripTags(m[1]).toLowerCase());
   return results.filter(Boolean);
 }
 
@@ -314,7 +314,7 @@ function buildFixes(findings: AuditFinding[]): AuditFix[] {
 
 export async function auditWebsite(rawInput: string): Promise<AuditResult> {
   const input = rawInput.trim();
-  const candidate = /^https?:\\/\\//i.test(input) ? input : "https://" + input;
+  const candidate = /^https?:\/\//i.test(input) ? input : "https://" + input;
   let requested = new URL(candidate);
   await assertSafe(requested);
 
@@ -338,26 +338,26 @@ export async function auditWebsite(rawInput: string): Promise<AuditResult> {
   const ogDescription = meta(html, "og:description", "og:description");
   const canonical = hasRel(html, "canonical");
   const viewport = tags(html, "meta").some(function (tag) { return (attrs(tag).name || "").toLowerCase() === "viewport"; });
-  const h1s = Array.from(html.matchAll(/<h1\\b[^>]*>([\\s\\S]*?)<\\/h1>/gi)).map(function (m) { return stripTags(m[1]); }).filter(Boolean);
-  const forms = (html.match(/<form\\b/gi) || []).length;
-  const firstForm = html.match(/<form\\b[^>]*>[\\s\\S]*?<\\/form>/i)?.[0] || "";
-  const firstFormFields = (firstForm.match(/<(?:input|select|textarea)\\b/gi) || []).length;
+  const h1s = Array.from(html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)).map(function (m) { return stripTags(m[1]); }).filter(Boolean);
+  const forms = (html.match(/<form\b/gi) || []).length;
+  const firstForm = html.match(/<form\b[^>]*>[\s\S]*?<\/form>/i)?.[0] || "";
+  const firstFormFields = (firstForm.match(/<(?:input|select|textarea)\b/gi) || []).length;
   const images = tags(html, "img");
   const imagesMissingAlt = images.filter(function (tag) { const a = attrs(tag); return !a.alt || !a.alt.trim(); }).length;
   const scripts = tags(html, "script").length;
   const linkCount = tags(html, "a").length;
   const linkText = hrefs.map(function (l) { return l.href + " " + l.text; }).join(" ");
-  const phone = hrefs.some(function (l) { return /^tel:/i.test(l.href); }) || /(?:\\+27|0[1-9][0-9])[\\s.-]*[0-9]{3}[\\s.-]*[0-9]{4}/.test(text);
-  const email = /mailto:/i.test(html) || /\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/i.test(text);
-  const whatsapp = /whatsapp|wa\\.me/i.test(linkText);
+  const phone = hrefs.some(function (l) { return /^tel:/i.test(l.href); }) || /(?:\+27|0[1-9][0-9])[\s.-]*[0-9]{3}[\s.-]*[0-9]{4}/.test(text);
+  const email = /mailto:/i.test(html) || /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(text);
+  const whatsapp = /whatsapp|wa\.me/i.test(linkText);
   const booking = /book|appointment|schedule|calendly|acuity|setmore|booksy|fresha|simplybook|mindbody|reserve/i.test(linkText);
   const form = forms > 0;
-  const contactPath = /contact|enquir|quote|request|mailto:|tel:|whatsapp|wa\\.me/i.test(linkText) || form || phone || email;
+  const contactPath = /contact|enquir|quote|request|mailto:|tel:|whatsapp|wa\.me/i.test(linkText) || form || phone || email;
   const cta = anyMatch(clickText.join(" "), [/book/i, /quote/i, /enquir/i, /contact/i, /call/i, /whatsapp/i, /get started/i, /request/i, /schedule/i, /appointment/i, /reserve/i, /consult/i, /order/i]);
-  const proof = /testimonial|review|what (?:our|clients?) say|customer stor|case stud|five star|★★★★★/i.test(text) || /Review|AggregateRating/i.test(html) || /\\b[0-9]{2,}[+]?[\\s]*(?:clients|customers|projects|reviews|years)\\b/i.test(text);
-  const localBusinessSchema = /"@type"\\s*:\\s*"(?:LocalBusiness|ProfessionalService|Restaurant|MedicalBusiness|Store)"/i.test(html);
-  const localSignal = localBusinessSchema || /PostalAddress|addressLocality|areaServed/i.test(html) || /\\b(?:Johannesburg|Soweto|Sandton|Pretoria|Cape Town|Durban|Gauteng|South Africa|Midrand|Randburg|Centurion)\\b/i.test(text);
-  const javascriptHeavy = text.split(/\\s+/).filter(Boolean).length < 180 && scripts >= 10;
+  const proof = /testimonial|review|what (?:our|clients?) say|customer stor|case stud|five star|★★★★★/i.test(text) || /Review|AggregateRating/i.test(html) || /\b[0-9]{2,}[+]?[\s]*(?:clients|customers|projects|reviews|years)\b/i.test(text);
+  const localBusinessSchema = /"@type"\s*:\s*"(?:LocalBusiness|ProfessionalService|Restaurant|MedicalBusiness|Store)"/i.test(html);
+  const localSignal = localBusinessSchema || /PostalAddress|addressLocality|areaServed/i.test(html) || /\b(?:Johannesburg|Soweto|Sandton|Pretoria|Cape Town|Durban|Gauteng|South Africa|Midrand|Randburg|Centurion)\b/i.test(text);
+  const javascriptHeavy = text.split(/\s+/).filter(Boolean).length < 180 && scripts >= 10;
   const robots = await aux(page.finalUrl, "/robots.txt");
   const sitemap = await aux(page.finalUrl, "/sitemap.xml");
 
