@@ -46,6 +46,7 @@ const NAV: { tab: DashboardTab; label: string; icon: React.ElementType }[] = [
   { tab: "overview", label: "Overview", icon: LayoutDashboard },
   { tab: "leads", label: "Leads", icon: Users },
   { tab: "website", label: "Website", icon: Globe },
+  { tab: "audit", label: "Fix Workspace", icon: ClipboardCheck },
   { tab: "settings", label: "Settings", icon: SettingsIcon },
   { tab: "billing", label: "Billing", icon: CreditCard },
 ];
