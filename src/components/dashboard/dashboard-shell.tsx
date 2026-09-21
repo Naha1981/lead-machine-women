@@ -7,6 +7,7 @@ import {
   Globe,
   Settings as SettingsIcon,
   CreditCard,
+  ClipboardCheck,
   Menu,
   ExternalLink,
   LogOut,
