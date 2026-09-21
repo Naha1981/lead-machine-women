@@ -34,7 +34,7 @@ export const apiClient = {
     if (params?.temperature) q.set("temperature", params.temperature);
     return api<{ leads: Lead[] }>(`/api/leads${q.size ? `?${q}` : ""}`);
   },
-  submitLead: (body: { slug: string; name: string; phone: string; email?: string; serviceNeeded?: string; message?: string; consentGiven: boolean }) =>
+  submitLead: (body: { slug: string; name: string; phone: string; email?: string; serviceNeeded?: string; message?: string; source?: "website" | "standalone"; consentGiven: boolean }) =>
     api<{ ok: boolean; leadId: string; score: number | null; temperature: string | null; ref: string }>("/api/leads", { method: "POST", body: JSON.stringify(body) }),
   updateLeadStatus: (id: string, status: Lead["status"]) =>
     api<{ lead: Lead }>(`/api/leads/${id}`, { method: "PUT", body: JSON.stringify({ status }) }),
@@ -58,6 +58,27 @@ export const apiClient = {
 
   updateAuditProjectStatus: (projectId: string, status: "diagnosed" | "approved" | "building" | "deployed" | "verified") =>
     api<{ project: any }>("/api/audit/projects", { method: "PATCH", body: JSON.stringify({ projectId, status }) }),
+
+  connectAuditRepository: (body: { projectId: string; repositoryFullName: string; baseBranch: string; authorizationConfirmed: true }) =>
+    api<{ project: any }>("/api/audit/projects/repository", { method: "POST", body: JSON.stringify(body) }),
+
+  buildAuditImplementation: (projectId: string) =>
+    api<{ project: any; pullRequest: any; patch: any }>("/api/audit/projects/build", {
+      method: "POST",
+      body: JSON.stringify({ projectId }),
+    }),
+
+  syncAuditImplementation: (projectId: string) =>
+    api<{ project: any; github: any }>("/api/audit/projects/implementation/status", {
+      method: "POST",
+      body: JSON.stringify({ projectId }),
+    }),
+
+  verifyAuditProject: (projectId: string) =>
+    api<{ project: any; verification: any }>("/api/audit/projects/verify", {
+      method: "POST",
+      body: JSON.stringify({ projectId }),
+    }),
 
   reQualify: (leadId: string) =>
     api<{ lead: Lead; qualification: any }>("/api/ai/qualify-lead", { method: "POST", body: JSON.stringify({ leadId }) }),

@@ -21,6 +21,9 @@ export type EventType =
   | "audit.lead_captured"
   | "audit.project.created"
   | "audit.project.status_changed"
+  | "audit.project.repository_connected"
+  | "audit.project.implementation_started"
+  | "audit.project.ci_updated"
   | "audit.project.verified";
 
 /**
@@ -42,7 +45,6 @@ export async function emitEvent(opts: {
       payload: opts.payload ?? null,
     });
   } catch (e) {
-    // Event emission must never break the caller.
     console.error("[events] emit failed:", (e as Error)?.message);
   }
 }

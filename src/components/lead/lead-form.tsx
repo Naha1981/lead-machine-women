@@ -15,6 +15,7 @@ type LeadFormProps = {
   slug: string;
   businessName: string;
   ctaText?: string;
+  source?: "website" | "standalone";
 };
 
 type SubmitResult = {
@@ -25,7 +26,7 @@ type SubmitResult = {
   ref: string;
 };
 
-export function LeadForm({ slug, businessName, ctaText = "Get a Free Consultation" }: LeadFormProps) {
+export function LeadForm({ slug, businessName, ctaText = "Get a Free Consultation", source = "website" }: LeadFormProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -57,6 +58,7 @@ export function LeadForm({ slug, businessName, ctaText = "Get a Free Consultatio
         email: email.trim() || undefined,
         serviceNeeded: serviceNeeded.trim() || undefined,
         message: message.trim() || undefined,
+        source,
         consentGiven: true,
       });
       setResult(res);
