@@ -225,6 +225,21 @@ export async function getGitHubPullRequest(
   }>(`/repos/${repo}/pulls/${pullNumber}`);
 }
 
+export async function getGitHubCheckRuns(
+  repositoryFullName: string,
+  commitSha: string
+) {
+  const repo = normalizeRepoFullName(repositoryFullName);
+  return githubRequest<{
+    total_count: number;
+    check_runs: Array<{
+      name: string;
+      status: "queued" | "in_progress" | "completed" | string;
+      conclusion?: string | null;
+    }>;
+  }>(`/repos/${repo}/commits/${commitSha}/check-runs`);
+}
+
 export async function getGitHubBranchSha(
   repositoryFullName: string,
   branchName: string
