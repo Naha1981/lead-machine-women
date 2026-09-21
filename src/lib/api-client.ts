@@ -47,6 +47,18 @@ export const apiClient = {
   getPublicWebsite: (slug: string) =>
     api<{ org: any; website: any }>(`/api/website/public?slug=${encodeURIComponent(slug)}`),
 
+  runAudit: (url: string) =>
+    api<{ audit: any }>("/api/audit", { method: "POST", body: JSON.stringify({ url }) }).then((data) => data.audit),
+
+  listAuditProjects: () =>
+    api<{ projects: any[] }>("/api/audit/projects"),
+
+  createAuditProject: (audit: any) =>
+    api<{ project: any }>("/api/audit/projects", { method: "POST", body: JSON.stringify({ audit }) }),
+
+  updateAuditProjectStatus: (projectId: string, status: "diagnosed" | "approved" | "building" | "deployed" | "verified") =>
+    api<{ project: any }>("/api/audit/projects", { method: "PATCH", body: JSON.stringify({ projectId, status }) }),
+
   reQualify: (leadId: string) =>
     api<{ lead: Lead; qualification: any }>("/api/ai/qualify-lead", { method: "POST", body: JSON.stringify({ leadId }) }),
   chat: async (body: { slug: string; message: string; history?: { role: "user" | "assistant"; content: string }[] }): Promise<{ reply: string }> => {

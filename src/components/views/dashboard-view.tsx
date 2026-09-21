@@ -6,6 +6,7 @@ import { OverviewTab } from "@/components/dashboard/overview-tab";
 import { LeadsTab } from "@/components/dashboard/leads-tab";
 import { SettingsTab } from "@/components/dashboard/settings-tab";
 import { BillingTab } from "@/components/dashboard/billing-tab";
+import { AuditWorkspaceTab } from "@/components/dashboard/audit-workspace-tab";
 import { useAppStore } from "@/store/app-store";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -27,6 +28,7 @@ export default function DashboardView() {
       {tab === "overview" && <OverviewTab />}
       {tab === "leads" && <LeadsTab />}
       {tab === "website" && <WebsiteTab />}
+      {tab === "audit" && <AuditWorkspaceTab />}
       {tab === "settings" && <SettingsTab />}
       {tab === "billing" && <BillingTab />}
     </DashboardShell>

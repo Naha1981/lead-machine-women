@@ -86,4 +86,6 @@ export type Subscription = {
 };
 
 export type AppView = "landing" | "auth" | "onboarding" | "dashboard" | "public";
-export type DashboardTab = "overview" | "leads" | "website" | "settings" | "billing";
+export type AuditProjectStatus = "diagnosed" | "approved" | "building" | "deployed" | "verified";
+
+export type DashboardTab = "overview" | "leads" | "website" | "audit" | "settings" | "billing";
