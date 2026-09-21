@@ -34,7 +34,7 @@ export const apiClient = {
     if (params?.temperature) q.set("temperature", params.temperature);
     return api<{ leads: Lead[] }>(`/api/leads${q.size ? `?${q}` : ""}`);
   },
-  submitLead: (body: { slug: string; name: string; phone: string; email?: string; serviceNeeded?: string; message?: string; consentGiven: boolean }) =>
+  submitLead: (body: { slug: string; name: string; phone: string; email?: string; serviceNeeded?: string; message?: string; source?: "website" | "standalone"; consentGiven: boolean }) =>
     api<{ ok: boolean; leadId: string; score: number | null; temperature: string | null; ref: string }>("/api/leads", { method: "POST", body: JSON.stringify(body) }),
   updateLeadStatus: (id: string, status: Lead["status"]) =>
     api<{ lead: Lead }>(`/api/leads/${id}`, { method: "PUT", body: JSON.stringify({ status }) }),
