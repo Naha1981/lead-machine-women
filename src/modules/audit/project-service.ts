@@ -8,16 +8,43 @@ import type { AuditResult } from "@/modules/audit/engine";
 const PROJECT_EVENTS = [
   "audit.project.created",
   "audit.project.status_changed",
+  "audit.project.repository_connected",
+  "audit.project.implementation_started",
+  "audit.project.ci_updated",
   "audit.project.verified",
 ] as const;
 
-export type AuditProjectStatus = "diagnosed" | "approved" | "building" | "deployed" | "verified";
+export type AuditProjectStatus =
+  | "diagnosed"
+  | "approved"
+  | "building"
+  | "deployed"
+  | "verified";
+
+export type AuditRepositoryBinding = {
+  provider: "github";
+  repositoryFullName: string;
+  baseBranch: string;
+  connectedAt: string;
+};
+
+export type AuditImplementation = {
+  branchName: string;
+  pullRequestNumber: number;
+  pullRequestUrl: string;
+  status: "awaiting-ci" | "ci-passed" | "ci-failed" | "ready-for-client-review" | "merged";
+  changedFiles: string[];
+  startedAt: string;
+  updatedAt: string;
+};
 
 export type AuditProject = {
   id: string;
   audit: AuditResult;
   fixPack: FixPack;
   status: AuditProjectStatus;
+  repository?: AuditRepositoryBinding;
+  implementation?: AuditImplementation;
   createdAt: string;
   updatedAt: string;
 };
@@ -27,6 +54,8 @@ type ProjectPayload = {
   audit: AuditResult;
   fixPack: FixPack;
   status: AuditProjectStatus;
+  repository?: AuditRepositoryBinding;
+  implementation?: AuditImplementation;
 };
 
 function projectFromEvent(row: typeof events.$inferSelect): AuditProject | null {
@@ -37,8 +66,21 @@ function projectFromEvent(row: typeof events.$inferSelect): AuditProject | null 
     audit: payload.audit,
     fixPack: payload.fixPack,
     status: payload.status ?? "diagnosed",
+    repository: payload.repository,
+    implementation: payload.implementation,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.createdAt.toISOString(),
+  };
+}
+
+function payloadFor(project: AuditProject): ProjectPayload {
+  return {
+    projectId: project.id,
+    audit: project.audit,
+    fixPack: project.fixPack,
+    status: project.status,
+    repository: project.repository,
+    implementation: project.implementation,
   };
 }
 
@@ -86,7 +128,7 @@ export async function listAuditProjects(orgId: string): Promise<AuditProject[]> 
       )
     )
     .orderBy(desc(events.createdAt))
-    .limit(250);
+    .limit(500);
 
   const projects = new Map<string, AuditProject>();
   for (const row of rows) {
@@ -95,7 +137,6 @@ export async function listAuditProjects(orgId: string): Promise<AuditProject[]> 
     projects.set(parsed.id, parsed);
   }
 
-  // Status events carry the same full project payload, so newest event wins.
   return [...projects.values()].sort(
     (a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)
   );
@@ -111,24 +152,80 @@ export async function updateAuditProjectStatus(opts: {
   const current = projects.find((item) => item.id === opts.projectId);
   if (!current) return null;
 
-  const eventType =
-    opts.status === "verified"
-      ? "audit.project.verified"
-      : "audit.project.status_changed";
-
   const updatedAt = new Date().toISOString();
   await emitEvent({
     orgId: opts.orgId,
     userId: opts.userId,
-    eventType,
+    eventType: opts.status === "verified" ? "audit.project.verified" : "audit.project.status_changed",
     payload: {
-      projectId: current.id,
-      audit: current.audit,
-      fixPack: current.fixPack,
-      status: opts.status,
+      ...payloadFor({ ...current, status: opts.status, updatedAt } as AuditProject),
       updatedAt,
     },
   });
 
   return { ...current, status: opts.status, updatedAt };
+}
+
+export async function connectAuditProjectRepository(opts: {
+  orgId: string;
+  userId: string;
+  projectId: string;
+  repository: AuditRepositoryBinding;
+}): Promise<AuditProject | null> {
+  const current = (await listAuditProjects(opts.orgId)).find((item) => item.id === opts.projectId);
+  if (!current) return null;
+  const updatedAt = new Date().toISOString();
+  const next = { ...current, repository: opts.repository, updatedAt };
+
+  await emitEvent({
+    orgId: opts.orgId,
+    userId: opts.userId,
+    eventType: "audit.project.repository_connected",
+    payload: payloadFor(next),
+  });
+
+  return next;
+}
+
+export async function recordAuditProjectImplementation(opts: {
+  orgId: string;
+  userId: string;
+  projectId: string;
+  implementation: AuditImplementation;
+}): Promise<AuditProject | null> {
+  const current = (await listAuditProjects(opts.orgId)).find((item) => item.id === opts.projectId);
+  if (!current) return null;
+  const updatedAt = new Date().toISOString();
+  const next = { ...current, implementation: opts.implementation, status: "building" as const, updatedAt };
+
+  await emitEvent({
+    orgId: opts.orgId,
+    userId: opts.userId,
+    eventType: "audit.project.implementation_started",
+    payload: payloadFor(next),
+  });
+
+  return next;
+}
+
+export async function updateAuditProjectCi(opts: {
+  orgId: string;
+  userId: string;
+  projectId: string;
+  status: AuditImplementation["status"];
+}): Promise<AuditProject | null> {
+  const current = (await listAuditProjects(opts.orgId)).find((item) => item.id === opts.projectId);
+  if (!current?.implementation) return null;
+  const updatedAt = new Date().toISOString();
+  const implementation = { ...current.implementation, status: opts.status, updatedAt };
+  const next = { ...current, implementation, updatedAt };
+
+  await emitEvent({
+    orgId: opts.orgId,
+    userId: opts.userId,
+    eventType: "audit.project.ci_updated",
+    payload: payloadFor(next),
+  });
+
+  return next;
 }
