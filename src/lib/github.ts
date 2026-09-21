@@ -219,16 +219,15 @@ export async function createGitHubInstallationToken(
   return token.token;
 }
 
-export function getGitHubAppSetupUrl() {
-  const config = getAppConfig();
-  const callback = `${config.appUrl}/api/audit/projects/github/callback`;
+export function getGitHubAppRegistrationUrl() {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) throw new GitHubNotConfiguredError("Set NEXT_PUBLIC_APP_URL before creating the GitHub App.");
   const params = new URLSearchParams();
   params.set("name", "NahaLabs Fix Engineer");
   params.set("description", "NahaLabs Revenue Leak Fix Engineer. Creates reviewable code changes only after explicit client repository authorization.");
-  params.set("url", config.appUrl);
+  params.set("url", appUrl);
   params.set("public", "true");
-  params.set("callback_urls[]", callback);
-  params.set("request_oauth_on_install", "false");
+  params.append("callback_urls[]", `${appUrl}/api/audit/projects/github/callback`);
   params.set("contents", "write");
   params.set("pull_requests", "write");
   params.set("actions", "read");
