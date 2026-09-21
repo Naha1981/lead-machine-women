@@ -209,7 +209,7 @@ export async function createGitHubInstallationToken(
         permissions: {
           contents: "write",
           pull_requests: "write",
-          actions: "read",
+          checks: "read",
           metadata: "read",
         },
       }),
@@ -232,7 +232,7 @@ export function getGitHubAppRegistrationUrl(appUrlOverride?: string) {
   params.set("setup_on_update", "true");
   params.set("contents", "write");
   params.set("pull_requests", "write");
-  params.set("actions", "read");
+  params.set("checks", "read");
   return `https://github.com/settings/apps/new?${params.toString()}`;
 }
 
