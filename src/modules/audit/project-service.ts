@@ -22,8 +22,10 @@ export type AuditProjectStatus =
   | "verified";
 
 export type AuditRepositoryBinding = {
-  provider: "github";
+  provider: "github-app";
   repositoryFullName: string;
+  repositoryId: number;
+  installationId: number;
   baseBranch: string;
   connectedAt: string;
 };
