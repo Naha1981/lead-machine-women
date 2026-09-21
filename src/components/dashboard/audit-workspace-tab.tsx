@@ -45,6 +45,17 @@ export function AuditWorkspaceTab() {
   const [repoByProject, setRepoByProject] = React.useState<Record<string, string>>({});
   const [authByProject, setAuthByProject] = React.useState<Record<string, boolean>>({});
   const [busyProject, setBusyProject] = React.useState<string | null>(null);
+  const [widgetCopied, setWidgetCopied] = React.useState(false);
+
+  async function copyWidgetScript() {
+    const slug = session?.org?.slug;
+    if (!slug || typeof window === "undefined") return;
+    const snippet = `<script src="${window.location.origin}/widget/${encodeURIComponent(slug)}" async></script>`;
+    await navigator.clipboard.writeText(snippet);
+    setWidgetCopied(true);
+    window.setTimeout(() => setWidgetCopied(false), 1800);
+    toast.success("Lead Machine widget script copied.");
+  }
 
   async function startAudit(event: React.FormEvent) {
     event.preventDefault();
@@ -192,13 +203,21 @@ export function AuditWorkspaceTab() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Standalone Lead Machine URL</p>
                 <p className="mt-1 text-sm font-medium text-slate-900">/go/{session.org.slug}</p>
               </div>
-              <Button variant="outline" size="sm" asChild>
-                <a href={`/go/${encodeURIComponent(session.org.slug)}`} target="_blank" rel="noreferrer">
-                  Open share URL
-                  <ExternalLink className="ml-1.5 size-3.5" />
-                </a>
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <a href={`/go/${encodeURIComponent(session.org.slug)}`} target="_blank" rel="noreferrer">
+                    Open share URL
+                    <ExternalLink className="ml-1.5 size-3.5" />
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" onClick={copyWidgetScript}>
+                  {widgetCopied ? "Copied" : "Copy embed script"}
+                </Button>
+              </div>
             </div>
+            <p className="mt-2 rounded-md bg-slate-50 px-3 py-2 font-mono text-[11px] text-slate-600">
+              &lt;script src=&quot;/widget/{session.org.slug}&quot; async&gt;&lt;/script&gt;
+            </p>
           )}
         </CardContent>
       </Card>
