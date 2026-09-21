@@ -152,7 +152,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const fileContexts = [];
+    const fileContexts: Array<{ path: string; content: string }> = [];
     for (const path of candidatePaths) {
       const file = await getGitHubFile(project.repository.repositoryFullName, path, project.repository.baseBranch);
       if (file.content.length > 100_000) continue;
