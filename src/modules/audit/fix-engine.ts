@@ -36,7 +36,7 @@ function cleanWords(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function deriveService(audit: AuditResult): string {
+function deriveService(audit: Pick<AuditResult, "domain">): string {
   const h1 = cleanWords(audit.domain.replace(/^www\./i, "").split(".")[0] || "");
   return h1 ? h1.replace(/[-_]+/g, " ") : "your service";
 }
