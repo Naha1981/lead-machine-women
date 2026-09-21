@@ -219,8 +219,8 @@ export async function createGitHubInstallationToken(
   return token.token;
 }
 
-export function getGitHubAppRegistrationUrl() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+export function getGitHubAppRegistrationUrl(appUrlOverride?: string) {
+  const appUrl = appUrlOverride || process.env.NEXT_PUBLIC_APP_URL;
   if (!appUrl) throw new GitHubNotConfiguredError("Set NEXT_PUBLIC_APP_URL before creating the GitHub App.");
   const params = new URLSearchParams();
   params.set("name", "NahaLabs Fix Engineer");
