@@ -253,7 +253,7 @@ async function fetchPage(start: URL): Promise<PageFetch> {
 async function aux(base: URL, path: string) {
   try {
     const target = new URL(path, base);
-    await assertSafeTarget(target);
+    await assertSafe(target);
     const response = await fetch(target, {
       method: "GET",
       redirect: "manual",
