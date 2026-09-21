@@ -41,11 +41,7 @@ function deriveService(audit: AuditResult): string {
   return h1 ? h1.replace(/[-_]+/g, " ") : "your service";
 }
 
-function findFix(findings: AuditFinding[], id: string, fallback: string) {
-  return findings.find((item) => item.id === id)?.fixAction ?? fallback;
-}
-
-export function buildFixPack(audit: AuditResult): FixPack {
+export function buildFixPack(audit: Pick<AuditResult, "url" | "finalUrl" | "domain" | "findings">): FixPack {
   const service = deriveService(audit);
   const h1 = audit.findings.some((item) => item.id === "missing-h1")
     ? `Get ${service} without the usual friction.`
