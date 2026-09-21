@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid audit payload." }, { status: 400 });
     }
 
-    const fixPack = buildFixPack(parsed.data.audit as never);
+    const fixPack = buildFixPack(parsed.data.audit);
     return NextResponse.json({ ok: true, fixPack });
   } catch (error) {
     console.error("[audit fix]", error);
