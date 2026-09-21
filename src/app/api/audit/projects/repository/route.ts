@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import {
-  connectAuditProjectRepository,
-  listAuditProjects,
-} from "@/modules/audit/project-service";
+import { listAuditProjects } from "@/modules/audit/project-service";
 import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
-import { getGitHubRepository, normalizeRepoFullName } from "@/lib/github";
+import {
+  createGitHubAppInstallUrl,
+  createGitHubAppState,
+  normalizeRepoFullName,
+} from "@/lib/github";
 
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
   projectId: z.string().uuid(),
   repositoryFullName: z.string().min(3).max(200),
-  baseBranch: z.string().min(1).max(100).default("main"),
   authorizationConfirmed: z.literal(true),
 });
 
@@ -31,41 +31,37 @@ export async function POST(req: Request) {
 
     const parsed = schema.safeParse(await req.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: "Confirm the authorised GitHub repository before connecting it." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Confirm the repository and explicit client authorization before continuing." },
+        { status: 400 }
+      );
     }
 
     const project = (await listAuditProjects(org.id)).find((item) => item.id === parsed.data.projectId);
     if (!project) return NextResponse.json({ error: "Project not found." }, { status: 404 });
     if (project.status !== "approved") {
-      return NextResponse.json({ error: "Approve the Fix Pack before connecting a repository." }, { status: 409 });
+      return NextResponse.json({ error: "Approve the Fix Pack before authorising a repository." }, { status: 409 });
+    }
+    if (project.repository) {
+      return NextResponse.json({ error: "A GitHub repository is already connected to this project." }, { status: 409 });
     }
 
     const repositoryFullName = normalizeRepoFullName(parsed.data.repositoryFullName);
-    const repo = await getGitHubRepository(repositoryFullName);
-
-    if (parsed.data.baseBranch !== repo.default_branch) {
-      return NextResponse.json(
-        { error: `Base branch does not match the repository default branch (${repo.default_branch}).` },
-        { status: 400 }
-      );
-    }
-
-    const connected = await connectAuditProjectRepository({
+    const state = createGitHubAppState({
       orgId: org.id,
       userId: user.id,
       projectId: project.id,
-      repository: {
-        provider: "github",
-        repositoryFullName,
-        baseBranch: repo.default_branch,
-        connectedAt: new Date().toISOString(),
-      },
+      repositoryFullName,
     });
 
-    return NextResponse.json({ project: connected });
+    return NextResponse.json({
+      installUrl: createGitHubAppInstallUrl(state),
+      repositoryFullName,
+    });
   } catch (error) {
-    console.error("[audit repository connect]", error);
-    const message = error instanceof Error ? error.message : "Could not connect the GitHub repository.";
+    console.error("[audit github authorization start]", error);
+    const message =
+      error instanceof Error ? error.message : "Could not start GitHub repository authorization.";
     const status = /not configured/i.test(message) ? 503 : 400;
     return NextResponse.json({ error: message }, { status });
   }

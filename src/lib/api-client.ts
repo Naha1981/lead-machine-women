@@ -59,8 +59,13 @@ export const apiClient = {
   updateAuditProjectStatus: (projectId: string, status: "diagnosed" | "approved" | "building" | "deployed" | "verified") =>
     api<{ project: any }>("/api/audit/projects", { method: "PATCH", body: JSON.stringify({ projectId, status }) }),
 
-  connectAuditRepository: (body: { projectId: string; repositoryFullName: string; baseBranch: string; authorizationConfirmed: true }) =>
-    api<{ project: any }>("/api/audit/projects/repository", { method: "POST", body: JSON.stringify(body) }),
+  getGitHubAuthorizationConfig: () =>
+    api<{ configured: boolean; registrationUrl: string }>("/api/audit/projects/github/config"),
+  startGitHubRepositoryAuthorization: (body: { projectId: string; repositoryFullName: string; authorizationConfirmed: true }) =>
+    api<{ installUrl: string; repositoryFullName: string }>("/api/audit/projects/repository", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   buildAuditImplementation: (projectId: string) =>
     api<{ project: any; pullRequest: any; patch: any }>("/api/audit/projects/build", {
