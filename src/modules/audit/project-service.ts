@@ -152,6 +152,16 @@ export async function updateAuditProjectStatus(opts: {
   const current = projects.find((item) => item.id === opts.projectId);
   if (!current) return null;
 
+  if (opts.status === "building" && !current.implementation) {
+    throw new Error("Implementation must be started by the builder before the project can enter Building.");
+  }
+  if (opts.status === "deployed" && current.implementation?.status !== "merged") {
+    throw new Error("Deployment can only be recorded after the client has merged the implementation PR.");
+  }
+  if (opts.status === "verified" && current.status !== "deployed") {
+    throw new Error("Run the post-deployment audit before marking the project verified.");
+  }
+
   const updatedAt = new Date().toISOString();
   await emitEvent({
     orgId: opts.orgId,
