@@ -16,7 +16,9 @@ export type EventType =
   | "lead.status_changed"
   | "whatsapp.sent"
   | "subscription.created"
-  | "subscription.updated";
+  | "subscription.updated"
+  | "audit.completed"
+  | "audit.lead_captured";
 
 /**
  * Append a domain event. Never throws — event emission is best-effort so it can
