@@ -16,7 +16,7 @@ const schema = z.object({
     findings: z.array(z.object({
       id: z.string(),
       severity: z.enum(["critical", "high", "medium", "low"]),
-      category: z.string(),
+      category: z.enum(["conversion", "trust", "mobile", "technical", "performance", "local"]),
       title: z.string(),
       description: z.string(),
       whyItMatters: z.string(),
