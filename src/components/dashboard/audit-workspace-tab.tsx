@@ -198,26 +198,28 @@ export function AuditWorkspaceTab() {
             No client code is changed during diagnosis. Repository access is a separate explicit authorisation step.
           </p>
           {session?.org?.slug && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-white p-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Standalone Lead Machine URL</p>
-                <p className="mt-1 text-sm font-medium text-slate-900">/go/{session.org.slug}</p>
+            <>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-white p-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Standalone Lead Machine URL</p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">/go/{session.org.slug}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`/go/${encodeURIComponent(session.org.slug)}`} target="_blank" rel="noreferrer">
+                      Open share URL
+                      <ExternalLink className="ml-1.5 size-3.5" />
+                    </a>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={copyWidgetScript}>
+                    {widgetCopied ? "Copied" : "Copy embed script"}
+                  </Button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <a href={`/go/${encodeURIComponent(session.org.slug)}`} target="_blank" rel="noreferrer">
-                    Open share URL
-                    <ExternalLink className="ml-1.5 size-3.5" />
-                  </a>
-                </Button>
-                <Button variant="outline" size="sm" onClick={copyWidgetScript}>
-                  {widgetCopied ? "Copied" : "Copy embed script"}
-                </Button>
-              </div>
-            </div>
-            <p className="mt-2 rounded-md bg-slate-50 px-3 py-2 font-mono text-[11px] text-slate-600">
-              &lt;script src=&quot;/widget/{session.org.slug}&quot; async&gt;&lt;/script&gt;
-            </p>
+              <p className="mt-2 rounded-md bg-slate-50 px-3 py-2 font-mono text-[11px] text-slate-600">
+                &lt;script src=&quot;/widget/{session.org.slug}&quot; async&gt;&lt;/script&gt;
+              </p>
+            </>
           )}
         </CardContent>
       </Card>
