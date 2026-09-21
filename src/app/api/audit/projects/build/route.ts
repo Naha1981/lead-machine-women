@@ -55,6 +55,65 @@ function buildBranchName(projectId: string, domain: string) {
   return `nahalabs/fix-${slug || "website"}-${projectId.slice(0, 8)}`;
 }
 
+function importSpecifiers(content: string) {
+  return [...content.matchAll(/^\\s*import(?:.|\\n)*?from\\s*[\\"']([^\\"']+)[\\"']/gm)]
+    .map((match) => match[1])
+    .filter(Boolean);
+}
+
+function validateGeneratedPatch(
+  originalByPath: Map<string, string>,
+  patch: { path: string; content: string }[]
+) {
+  if (patch.length > 3) return "The implementation is limited to three files per reviewable PR.";
+
+  const forbidden = [
+    "child_process",
+    "node:fs",
+    "node:net",
+    "node:dns",
+    "process.env",
+    "eval(",
+    "new Function(",
+    "require(",
+    "dangerouslySetInnerHTML",
+  ];
+
+  for (const item of patch) {
+    const original = originalByPath.get(item.path);
+    if (!original) return `No original source snapshot exists for ${item.path}.`;
+
+    const originalLines = original.split("\n").filter((line) => line.trim().length > 0);
+    const anchors = originalLines.slice(0, 2).filter((line) => line.trim().length > 12);
+    if (anchors.some((line) => !item.content.includes(line.trim()))) {
+      return `The generated rewrite for ${item.path} is too different from the authorised source.`;
+    }
+
+    if (item.content.length < Math.max(200, Math.round(original.length * 0.25))) {
+      return `The generated rewrite for ${item.path} is unexpectedly small.`;
+    }
+    if (item.content.length > Math.round(original.length * 2)) {
+      return `The generated rewrite for ${item.path} is unexpectedly large.`;
+    }
+
+    for (const token of forbidden) {
+      if (item.content.includes(token) && !original.includes(token)) {
+        return `The generated patch introduced a blocked operation: ${token}`;
+      }
+    }
+
+    const originalImports = new Set(importSpecifiers(original));
+    const newImports = importSpecifiers(item.content);
+    for (const specifier of newImports) {
+      if (!originalImports.has(specifier) && !specifier.startsWith(".") && !specifier.startsWith("@/")) {
+        return `The generated patch introduced a new external import: ${specifier}`;
+      }
+    }
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
@@ -120,6 +179,12 @@ export async function POST(req: Request) {
       )
     ) {
       return NextResponse.json({ error: "The generated patch touched a file outside the authorised implementation boundary." }, { status: 422 });
+    }
+
+    const originalByPath = new Map(fileContexts.map((file) => [file.path, file.content]));
+    const safetyError = validateGeneratedPatch(originalByPath, patch.patches);
+    if (safetyError) {
+      return NextResponse.json({ error: safetyError }, { status: 422 });
     }
 
     const branchName = buildBranchName(project.id, project.audit.domain);
