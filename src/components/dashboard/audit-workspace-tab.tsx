@@ -57,6 +57,25 @@ export function AuditWorkspaceTab() {
     toast.success("Lead Machine widget script copied.");
   }
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const github = params.get("github");
+    if (!github) return;
+    if (github === "connected") {
+      toast.success("GitHub App authorization complete. The repository is now connected.");
+      reload();
+    } else if (github === "cancelled") {
+      toast.message("GitHub repository authorization was cancelled.");
+    } else if (github === "error") {
+      toast.error("GitHub authorization could not be completed. Check the selected repository and app access.");
+    }
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete("github");
+    clean.searchParams.delete("projectId");
+    window.history.replaceState({}, "", clean.toString());
+  }, [reload]);
+
   async function startAudit(event: React.FormEvent) {
     event.preventDefault();
     setBusyProject("new");
@@ -99,17 +118,14 @@ export function AuditWorkspaceTab() {
 
     setBusyProject(project.id);
     try {
-      await apiClient.connectAuditRepository({
+      const result = await apiClient.startGitHubRepositoryAuthorization({
         projectId: project.id,
         repositoryFullName,
-        baseBranch: "main",
         authorizationConfirmed: true,
       });
-      reload();
-      toast.success("Authorised repository connected and access verified.");
+      window.location.assign(result.installUrl);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not connect repository.");
-    } finally {
+      toast.error(e instanceof Error ? e.message : "Could not start GitHub authorization.");
       setBusyProject(null);
     }
   }
@@ -326,11 +342,11 @@ export function AuditWorkspaceTab() {
                           }
                           disabled={isBusy}
                         />
-                        <span>I confirm the client has explicitly authorised NahaLabs to access this repository and create a reviewable pull request. NahaLabs will not merge or deploy it.</span>
+                        <span>I confirm the client has explicitly authorised NahaLabs to access this repository. GitHub will show exactly which repository the NahaLabs App is being granted access to. NahaLabs will not merge or deploy it.</span>
                       </label>
                       <Button size="sm" onClick={() => connectRepository(project)} disabled={isBusy}>
                         {isBusy ? <RefreshCw className="mr-1.5 size-3.5 animate-spin" /> : <ShieldCheck className="mr-1.5 size-3.5" />}
-                        {isBusy ? "Verifying..." : "Connect authorised repo"}
+                        {isBusy ? "Opening GitHub..." : "Authorise GitHub App"}
                       </Button>
                     </div>
                   </div>
