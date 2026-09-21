@@ -127,7 +127,7 @@ export async function getGitHubFile(
   if (!result.content) throw new Error(`GitHub returned no content for ${path}.`);
   const content =
     result.encoding === "base64"
-      ? Buffer.from(result.content.replace(/\\n/g, ""), "base64").toString("utf8")
+      ? Buffer.from(result.content.replace(/\s/g, ""), "base64").toString("utf8")
       : result.content;
 
   return {
@@ -265,5 +265,5 @@ export function isSafeImplementationPath(path: string) {
   ) {
     return false;
   }
-  return /\\.(tsx|ts|jsx|js)$/.test(lower);
+  return /\.(tsx|ts|jsx|js)$/.test(lower);
 }
