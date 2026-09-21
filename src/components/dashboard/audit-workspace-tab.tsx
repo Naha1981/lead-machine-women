@@ -41,6 +41,7 @@ const STATUS_LABEL: Record<AuditProjectStatus, string> = {
 export function AuditWorkspaceTab() {
   const { data, loading, error, reload } = useAsync(() => apiClient.listAuditProjects(), []);
   const { data: session } = useAsync(() => apiClient.me(), []);
+  const { data: githubConfig } = useAsync(() => apiClient.getGitHubAuthorizationConfig(), []);
   const [url, setUrl] = React.useState("");
   const [repoByProject, setRepoByProject] = React.useState<Record<string, string>>({});
   const [authByProject, setAuthByProject] = React.useState<Record<string, boolean>>({});
@@ -224,6 +225,20 @@ export function AuditWorkspaceTab() {
           <p className="mt-2 text-xs text-slate-500">
             No client code is changed during diagnosis. Repository access is a separate explicit authorisation step.
           </p>
+          {githubConfig && !githubConfig.configured && (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">One-time setup</p>
+              <p className="mt-1 text-sm text-amber-950">
+                Register the NahaLabs Fix Engineer GitHub App once. After the server variables are configured, each client can authorize only the repository they select.
+              </p>
+              <Button className="mt-3" variant="outline" size="sm" asChild>
+                <a href={githubConfig.registrationUrl} target="_blank" rel="noreferrer">
+                  Configure GitHub App
+                  <ExternalLink className="ml-1.5 size-3.5" />
+                </a>
+              </Button>
+            </div>
+          )}
           {session?.org?.slug && (
             <>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-white p-3">
