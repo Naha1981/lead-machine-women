@@ -59,6 +59,21 @@ export const apiClient = {
   updateAuditProjectStatus: (projectId: string, status: "diagnosed" | "approved" | "building" | "deployed" | "verified") =>
     api<{ project: any }>("/api/audit/projects", { method: "PATCH", body: JSON.stringify({ projectId, status }) }),
 
+  connectAuditRepository: (body: { projectId: string; repositoryFullName: string; baseBranch: string; authorizationConfirmed: true }) =>
+    api<{ project: any }>("/api/audit/projects/repository", { method: "POST", body: JSON.stringify(body) }),
+
+  buildAuditImplementation: (projectId: string) =>
+    api<{ project: any; pullRequest: any; patch: any }>("/api/audit/projects/build", {
+      method: "POST",
+      body: JSON.stringify({ projectId }),
+    }),
+
+  syncAuditImplementation: (projectId: string) =>
+    api<{ project: any; github: any }>("/api/audit/projects/implementation/status", {
+      method: "POST",
+      body: JSON.stringify({ projectId }),
+    }),
+
   reQualify: (leadId: string) =>
     api<{ lead: Lead; qualification: any }>("/api/ai/qualify-lead", { method: "POST", body: JSON.stringify({ leadId }) }),
   chat: async (body: { slug: string; message: string; history?: { role: "user" | "assistant"; content: string }[] }): Promise<{ reply: string }> => {
