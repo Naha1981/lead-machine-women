@@ -7,6 +7,7 @@ import {
 } from "@/modules/audit/project-service";
 import {
   createGitHubBranch,
+  createGitHubInstallationToken,
   createGitHubPullRequest,
   getGitHubFile,
   getGitHubTree,
@@ -137,8 +138,23 @@ export async function POST(req: Request) {
     if (!project.repository) {
       return NextResponse.json({ error: "Connect the authorised GitHub repository first." }, { status: 409 });
     }
+    if (project.repository.provider !== "github-app" || !project.repository.installationId) {
+      return NextResponse.json(
+        { error: "Reconnect this repository through the NahaLabs GitHub App before building." },
+        { status: 409 }
+      );
+    }
 
-    const tree = await getGitHubTree(project.repository.repositoryFullName, project.repository.baseBranch);
+    const installationToken = await createGitHubInstallationToken(
+      project.repository.installationId,
+      project.repository.repositoryFullName
+    );
+
+    const tree = await getGitHubTree(
+      project.repository.repositoryFullName,
+      project.repository.baseBranch,
+      installationToken
+    );
     const paths = tree
       .filter((item) => item.type === "blob")
       .map((item) => item.path)
@@ -154,7 +170,12 @@ export async function POST(req: Request) {
 
     const fileContexts: Array<{ path: string; content: string }> = [];
     for (const path of candidatePaths) {
-      const file = await getGitHubFile(project.repository.repositoryFullName, path, project.repository.baseBranch);
+      const file = await getGitHubFile(
+        project.repository.repositoryFullName,
+        path,
+        project.repository.baseBranch,
+        installationToken
+      );
       if (file.content.length > 100_000) continue;
       fileContexts.push({ path, content: file.content });
     }
@@ -192,7 +213,8 @@ export async function POST(req: Request) {
       await createGitHubBranch(
         project.repository.repositoryFullName,
         branchName,
-        project.repository.baseBranch
+        project.repository.baseBranch,
+        installationToken
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
@@ -203,7 +225,8 @@ export async function POST(req: Request) {
       const current = await getGitHubFile(
         project.repository.repositoryFullName,
         item.path,
-        branchName
+        branchName,
+        installationToken
       );
       await updateGitHubFile({
         repositoryFullName: project.repository.repositoryFullName,
@@ -212,6 +235,7 @@ export async function POST(req: Request) {
         sha: current.sha,
         branch: branchName,
         message: `fix: apply Revenue Leak Fix Pack to ${item.path}`,
+        accessToken: installationToken,
       });
     }
 
@@ -239,6 +263,7 @@ export async function POST(req: Request) {
       head: branchName,
       base: project.repository.baseBranch,
       draft: true,
+      accessToken: installationToken,
     });
 
     const implementation = {
