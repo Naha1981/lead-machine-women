@@ -21,11 +21,11 @@ export async function generateImplementationPatch(opts: {
       (action) =>
         `- [${action.severity.toUpperCase()}] ${action.action} (acceptance: ${action.acceptanceTest})`
     )
-    .join("\\n");
+    .join("\n");
 
   const fileText = opts.files
-    .map((file) => `===== FILE: ${file.path} =====\\n${file.content}`)
-    .join("\\n\\n");
+    .map((file) => `===== FILE: ${file.path} =====\n${file.content}`)
+    .join("\n\n");
 
   const { output } = await generateText({
     model,
