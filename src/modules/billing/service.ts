@@ -53,6 +53,17 @@ export async function getSubscriptionForOrg(orgId: string): Promise<Subscription
   return rows[0] ?? null;
 }
 
+export async function markSubscriptionCancelled(orgId: string): Promise<SubscriptionRow | null> {
+  const db = await getDb();
+  const now = new Date();
+  const rows = await db.update(subscriptions).set({ status: "cancelled", cancelledAt: now }).where(eq(subscriptions.orgId, orgId)).returning();
+  if (rows[0]) {
+    await db.update(organizations).set({ plan: "trial", updatedAt: now }).where(eq(organizations.id, orgId));
+    await emitEvent({ orgId, eventType: "subscription.updated", payload: { plan: rows[0].plan, status: "cancelled" } });
+  }
+  return rows[0] ?? null;
+}
+
 export async function setSubscriptionPlan(opts: {
   orgId: string;
   plan: string;
