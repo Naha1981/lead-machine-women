@@ -58,11 +58,18 @@ export function AnalyticsTab() {
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 text-sm"><MessageCircle className="size-4 text-emerald-600" /> {data.whatsapp.inbound} inbound</div>
             <div className="flex items-center gap-2 text-sm"><Activity className="size-4 text-sky-600" /> {data.whatsapp.outbound} outbound</div>
-            <p className="text-xs text-muted-foreground">Response activity: {data.whatsapp.responseRate}%</p>
+            <p className="text-xs text-muted-foreground">Response activity: {data.whatsapp.responseActivityRate}%</p>
           </CardContent>
         </Card>
       </div>
 
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">What Lead Machine is learning</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {(data.learning ?? []).map((item: string, i: number) => <p key={i} className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700">{item}</p>)}
+        </CardContent>
+      </Card>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Lead sources</CardTitle></CardHeader>
