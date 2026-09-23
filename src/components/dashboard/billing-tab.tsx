@@ -333,9 +333,8 @@ export function BillingTab() {
     if (planId === "trial") return;
     setSubscribingId(planId);
     try {
-      await apiClient.subscribe(planId as "starter" | "growth" | "agency");
-      toast.success(`Switched to ${planId} plan`);
-      reload();
+      const result = await apiClient.subscribe(planId as "starter" | "growth" | "agency");
+      window.location.assign(result.checkoutUrl);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to subscribe");
     } finally {
@@ -345,12 +344,15 @@ export function BillingTab() {
 
   async function handleCancel() {
     setCancelling(true);
-    // Simulated cancellation — just toast and reload.
-    setTimeout(() => {
-      toast.success("Subscription cancelled (simulated)");
-      setCancelling(false);
+    try {
+      await apiClient.cancelSubscription();
+      toast.success("Subscription cancelled");
       reload();
-    }, 600);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to cancel subscription");
+    } finally {
+      setCancelling(false);
+    }
   }
 
   if (loading) {
@@ -397,9 +399,7 @@ export function BillingTab() {
             <AlertDialogHeader>
               <AlertDialogTitle>Cancel subscription?</AlertDialogTitle>
               <AlertDialogDescription>
-                This is a simulated cancellation. Your plan will remain active
-                until the end of the current billing period. You can re-subscribe
-                at any time.
+                This cancels the recurring PayFast subscription. The change is confirmed server-side before the app marks the subscription cancelled.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -450,7 +450,7 @@ export function BillingTab() {
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" />
         <p>
           Payments are processed by{" "}
-          <span className="font-medium text-slate-700">Paystack</span>. ZAR
+          <span className="font-medium text-slate-700">PayFast</span>. ZAR
           billing. Cancel anytime. Prices exclude VAT.
         </p>
       </div>
