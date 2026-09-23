@@ -9,6 +9,13 @@ export type LeadRow = typeof leads.$inferSelect;
 export type LeadTemperature = "hot" | "warm" | "cold";
 export type LeadStatus = "new" | "contacted" | "qualified" | "won" | "lost";
 
+
+function normalizeLeadPhone(value: string): string {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = "27" + digits.slice(1);
+  return digits;
+}
+
 export async function createLead(opts: {
   orgId: string;
   name: string;
@@ -32,7 +39,7 @@ export async function createLead(opts: {
     .values({
       orgId: opts.orgId,
       name: opts.name,
-      phone: opts.phone,
+      phone: normalizeLeadPhone(opts.phone),
       email: opts.email ?? null,
       serviceNeeded: opts.serviceNeeded ?? null,
       message: opts.message ?? null,
@@ -105,7 +112,7 @@ export async function setLeadQualification(
 export async function findLeadByPhone(orgId: string, phone: string): Promise<LeadRow | null> {
   const db = await getDb();
   const rows = await db.select().from(leads)
-    .where(and(eq(leads.orgId, orgId), eq(leads.phone, phone)))
+    .where(and(eq(leads.orgId, orgId), eq(leads.phone, normalizeLeadPhone(phone))))
     .orderBy(desc(leads.createdAt)).limit(1);
   return rows[0] ?? null;
 }
