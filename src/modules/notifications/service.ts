@@ -3,8 +3,8 @@
 // sendLeadNotifications(org, lead) is the SINGLE entry point called by the
 // leads route on lead create + AI qualification. It:
 //   1. Builds the OWNER notification + PROSPECT confirmation messages.
-//   2. If Evolution is configured AND SIMULATE_WHATSAPP !== 'true': sends both
-//      via the Evolution client, then logs each to whatsapp_messages with
+//   2. If the WhatsApp Operator is configured AND SIMULATE_WHATSAPP !== 'true': sends both
+//      via the Operator, then logs each to whatsapp_messages with
 //      status 'sent' or 'failed'.
 //   3. Else (simulate / unconfigured): logs both to whatsapp_messages with
 //      status 'simulated' (preserves the old log-only behavior exactly).
@@ -63,7 +63,6 @@ Reply fast — speed wins this client. Call them within 2 hours to maximise conv
 
 function buildProspectMessage(org: OrgForNotifications, lead: LeadForNotifications): string {
   const firstName = lead.name.split(" ")[0] || lead.name;
-  const ref = `#${lead.id.slice(-6).toUpperCase()}`;
   return `Hi ${firstName} 👋
 
 Thanks for reaching out to ${org.name}! We've received your enquiry.
@@ -82,8 +81,7 @@ export type SendLeadNotificationsResult = {
 };
 
 /**
- * Send lead notifications (owner + prospect) via WhatsApp. Uses real Evolution
- * API if configured + SIMULATE_WHATSAPP !== 'true'; otherwise logs as 'simulated'.
+ * Send lead notifications (owner + prospect) via WhatsApp. Uses the shared Operator when configured; otherwise logs as 'simulated'.
  * NEVER throws.
  */
 export async function sendLeadNotifications(
