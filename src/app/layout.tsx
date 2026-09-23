@@ -20,22 +20,26 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
+        {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
         <ClerkProvider
-          appearance={{
-            variables: { colorPrimary: "#059669", colorBackground: "#ffffff", borderRadius: "0.625rem", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" },
-            elements: {
-              formButtonPrimary: "bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium",
-              card: "bg-white border border-slate-200 shadow-lg",
-              headerTitle: "text-slate-900", headerSubtitle: "text-slate-600",
-              socialButtonsBlockButton: "border border-slate-200 text-slate-700 hover:bg-slate-50",
-              socialButtonsBlockButtonText: "text-slate-700", dividerLine: "bg-slate-200", dividerText: "text-slate-400",
-              formFieldLabel: "text-slate-700", formFieldInput: "border border-slate-200 text-slate-900 placeholder:text-slate-400",
-              footerActionLink: "text-emerald-600 hover:text-emerald-700",
-            },
-          }}
-        >
-          {children}
-        </ClerkProvider>
+                  appearance={{
+                    variables: { colorPrimary: "#059669", colorBackground: "#ffffff", borderRadius: "0.625rem", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" },
+                    elements: {
+                      formButtonPrimary: "bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium",
+                      card: "bg-white border border-slate-200 shadow-lg",
+                      headerTitle: "text-slate-900", headerSubtitle: "text-slate-600",
+                      socialButtonsBlockButton: "border border-slate-200 text-slate-700 hover:bg-slate-50",
+                      socialButtonsBlockButtonText: "text-slate-700", dividerLine: "bg-slate-200", dividerText: "text-slate-400",
+                      formFieldLabel: "text-slate-700", formFieldInput: "border border-slate-200 text-slate-900 placeholder:text-slate-400",
+                      footerActionLink: "text-emerald-600 hover:text-emerald-700",
+                    },
+                  }}
+                >
+                  {children}
+                </ClerkProvider>
+      ) : (
+        children
+      )}
         <Toaster />
         <SonnerToaster position="top-right" richColors closeButton />
       </body>
