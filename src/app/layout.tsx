@@ -41,6 +41,24 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const content = (
+    <>
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        >
+          {children}
+          <Toaster />
+          <SonnerToaster position="top-right" richColors closeButton />
+        </body>
+      </html>
+    </>
+  );
+
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    return content;
+  }
+
   return (
     <ClerkProvider
       appearance={{
