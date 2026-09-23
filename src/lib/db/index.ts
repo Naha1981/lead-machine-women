@@ -59,7 +59,7 @@ async function createPgliteClient(): Promise<DbClient> {
       } catch {
         /* ignore */
       }
-      const pg = new PGlite(dbDir);
+      const pg = process.env.CI === "true" ? new PGlite() : new PGlite(dbDir);
       const db = drizzle(pg, { schema: schema.schema });
       // Auto-create tables from the schema on first dev boot.
       await ensureSchema(pg);
