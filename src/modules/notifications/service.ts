@@ -69,7 +69,7 @@ Thanks for reaching out to ${org.name}! We've received your enquiry.
 
 Our team will WhatsApp or call you within 2 hours during business hours (Mon-Fri 8am-5pm SAST).
 
-Reference: ${ref}
+Reference: #${lead.id.slice(-6).toUpperCase()}
 
 — ${org.name}`;
 }
@@ -90,8 +90,6 @@ export async function sendLeadNotifications(
 ): Promise<SendLeadNotificationsResult> {
   const ownerMessage = buildOwnerMessage(org, lead);
   const prospectMessage = buildProspectMessage(org, lead);
-  const ref = `#${lead.id.slice(-6).toUpperCase()}`;
-
   const shouldSimulate =
     !operatorConfigured() || !org.whatsappAccountId || process.env.SIMULATE_WHATSAPP === "true";
 
