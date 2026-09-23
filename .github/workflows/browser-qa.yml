@@ -18,8 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5hY2NvdW50cy5kZXYk
-      CLERK_SECRET_KEY: sk_test_demo_only_not_for_real_auth
       NEXT_PUBLIC_APP_ID: lead-machine
       ENABLE_DEMO_MODE: "false"
       SIMULATE_WHATSAPP: "true"
