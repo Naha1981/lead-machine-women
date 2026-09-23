@@ -14,6 +14,11 @@ export default function proxy(
   req: Parameters<typeof clerkProxy>[0],
   event: Parameters<typeof clerkProxy>[1],
 ) {
+  // Demo mode is intentionally auth-free. Skip Clerk entirely rather than
+  // invoking Clerk middleware and returning a response from inside its callback.
+  if (process.env.ENABLE_DEMO_MODE === "true") {
+    return NextResponse.next();
+  }
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
     return NextResponse.next();
   }
