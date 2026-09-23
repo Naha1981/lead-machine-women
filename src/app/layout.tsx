@@ -25,9 +25,9 @@ export const metadata: Metadata = {
     "AI website",
     "WhatsApp leads",
     "CRM",
-    "NhahaLabs",
+    "NahaLabs",
   ],
-  authors: [{ name: "NhahaLabs" }],
+  authors: [{ name: "NahaLabs" }],
   openGraph: {
     title: "Lead Machine — AI Lead Generation",
     description: "Your business gets a website that turns visitors into paying clients while you sleep.",
@@ -41,24 +41,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const content = (
-    <>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-        >
-          {children}
-          <Toaster />
-          <SonnerToaster position="top-right" richColors closeButton />
-        </body>
-      </html>
-    </>
-  );
-
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    return content;
-  }
-
   return (
     <ClerkProvider
       appearance={{

@@ -11,19 +11,37 @@ export async function GET() {
       publishableKey: Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY),
       secretKey: Boolean(process.env.CLERK_SECRET_KEY),
     },
-    ai: Boolean(process.env.GROQ_API_KEY), // Vercel AI SDK → Groq (free, OpenAI-compatible endpoint)
+    ai: Boolean(process.env.GROQ_API_KEY),
     whatsapp: {
-      evolutionApiUrl: Boolean(process.env.EVOLUTION_API_URL),
-      evolutionApiKey: Boolean(process.env.EVOLUTION_GLOBAL_API_KEY),
-      simulate: process.env.SIMULATE_WHATSAPP !== "false", // defaults to true
+      operatorUrl: Boolean(process.env.OPERATOR_URL),
+      operatorApiKey: Boolean(process.env.OPERATOR_API_KEY),
+      webhookSecret: Boolean(process.env.WEBHOOK_SECRET),
+      appUrl: Boolean(process.env.NEXT_PUBLIC_APP_URL),
+      simulate: process.env.SIMULATE_WHATSAPP === "true",
     },
     billing: {
-      payfastMerchantId: Boolean(process.env.PAYFAST_MERCHANT_ID), // Phase 6
+      payfastMerchantId: Boolean(process.env.PAYFAST_MERCHANT_ID),
       payfastMerchantKey: Boolean(process.env.PAYFAST_MERCHANT_KEY),
+      payfastPassphrase: Boolean(process.env.PAYFAST_PASSPHRASE),
+    },
+    github: {
+      appId: Boolean(process.env.GITHUB_APP_ID),
+      appSlug: Boolean(process.env.GITHUB_APP_SLUG),
+      privateKey: Boolean(process.env.GITHUB_APP_PRIVATE_KEY),
+      stateSecret: Boolean(process.env.GITHUB_APP_STATE_SECRET),
+      appUrl: Boolean(process.env.NEXT_PUBLIC_APP_URL),
     },
   };
 
-  const allCritical = checks.database && checks.clerk.publishableKey && checks.clerk.secretKey;
+  const allCritical =
+    checks.database &&
+    checks.clerk.publishableKey &&
+    checks.clerk.secretKey &&
+    checks.ai &&
+    checks.whatsapp.operatorUrl &&
+    checks.whatsapp.operatorApiKey &&
+    checks.whatsapp.webhookSecret &&
+    checks.whatsapp.appUrl;
 
   return NextResponse.json({
     ok: allCritical,

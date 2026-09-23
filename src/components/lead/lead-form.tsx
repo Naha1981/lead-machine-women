@@ -84,7 +84,7 @@ export function LeadForm({ slug, businessName, ctaText = "Get a Free Consultatio
   if (result) {
     return (
       <LeadSuccess
-        ref={result.ref}
+        refCode={result.ref}
         score={result.score}
         temperature={result.temperature}
         businessName={businessName}

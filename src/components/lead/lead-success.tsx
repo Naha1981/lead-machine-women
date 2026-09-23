@@ -5,7 +5,7 @@ import { CheckCircle2, MessageCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type LeadSuccessProps = {
-  ref: string;
+  refCode: string;
   score: number | null;
   temperature: string | null;
   businessName: string;
@@ -14,13 +14,13 @@ type LeadSuccessProps = {
 };
 
 export function LeadSuccess({
-  ref,
+  refCode,
   businessName,
   leadName,
   onReset,
 }: LeadSuccessProps) {
   const firstName = leadName.trim().split(/\s+/)[0] || "there";
-  const whatsappMessage = `Hi ${firstName} 👋 Thanks for reaching out to ${businessName}! We've received your enquiry. Our team will WhatsApp or call you within 2 hours. Reference: ${ref}`;
+  const whatsappMessage = `Hi ${firstName} 👋 Thanks for reaching out to ${businessName}! We've received your enquiry. Our team will WhatsApp or call you within 2 hours. Reference: ${refCode}`;
 
   return (
     <motion.div
@@ -93,7 +93,7 @@ export function LeadSuccess({
       <div className="mt-5 flex items-center justify-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5">
           <span className="text-xs text-slate-500">Reference</span>
-          <span className="text-sm font-mono font-semibold text-slate-900">{ref}</span>
+          <span className="text-sm font-mono font-semibold text-slate-900">{refCode}</span>
         </div>
       </div>
 
