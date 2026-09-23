@@ -45,6 +45,7 @@ export const organizations = pgTable("organizations", {
   logoUrl: varchar("logo_url", { length: 500 }),
   primaryColor: varchar("primary_color", { length: 9 }).default("#059669").notNull(),
   whatsappNumber: varchar("whatsapp_number", { length: 30 }),
+  whatsappAccountId: varchar("whatsapp_account_id", { length: 120 }),
   whatsappConnected: boolean("whatsapp_connected").default(false).notNull(),
   ownerPhone: varchar("owner_phone", { length: 30 }),
   plan: varchar("plan", { length: 20 }).default("trial").notNull(),
@@ -99,6 +100,7 @@ export const leads = pgTable(
     whatsappSent: boolean("whatsapp_sent").default(false).notNull(),
     ownerNotified: boolean("owner_notified").default(false).notNull(),
     consentGiven: boolean("consent_given").default(false).notNull(),
+    optedOutAt: timestamp("opted_out_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -170,6 +172,29 @@ export const subscriptions = pgTable("subscriptions", {
 // ---------- events (NEW — event-driven standard) ----------
 // Every significant action emits a row here. orgId is nullable for user-level
 // events (e.g. user.signed_up before an org exists).
+// ---------- follow_up_jobs ----------
+export const followUpJobs = pgTable(
+  "follow_up_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    leadId: uuid("lead_id").notNull().references(() => leads.id, { onDelete: "cascade" }),
+    channel: varchar("channel", { length: 20 }).default("whatsapp").notNull(),
+    message: text("message").notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
+    status: varchar("status", { length: 20 }).default("pending").notNull(),
+    attempts: integer("attempts").default(0).notNull(),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgScheduledIdx: index("follow_up_jobs_org_scheduled_idx").on(t.orgId, t.scheduledAt),
+    statusScheduledIdx: index("follow_up_jobs_status_scheduled_idx").on(t.status, t.scheduledAt),
+    leadIdx: index("follow_up_jobs_lead_id_idx").on(t.leadId),
+  })
+);
+
 export const events = pgTable(
   "events",
   {
@@ -194,6 +219,7 @@ export type DbLead = typeof leads.$inferSelect;
 export type DbWebsite = typeof websites.$inferSelect;
 export type DbWhatsAppMessage = typeof whatsappMessages.$inferSelect;
 export type DbSubscription = typeof subscriptions.$inferSelect;
+export type DbFollowUpJob = typeof followUpJobs.$inferSelect;
 export type DbEvent = typeof events.$inferSelect;
 
 export const schema = {
@@ -204,5 +230,6 @@ export const schema = {
   websites,
   whatsappMessages,
   subscriptions,
+  followUpJobs,
   events,
 };
