@@ -68,7 +68,7 @@ await run("landing desktop renders", async () => {
   await assertText(desktop, "Get 10+ Qualified Leads Per Month", "landing hero");
   await assertText(desktop, "How It Works", "landing sections");
   await assertText(desktop, "Pricing", "landing sections");
-  await assertText(desktop, "Frequently Asked Questions", "landing FAQ");
+  await assertText(desktop, "Questions, answered", "landing FAQ");
   await desktop.locator("#features").waitFor();
   await desktop.locator("#how-it-works").waitFor();
   await desktop.locator("#pricing").waitFor();
@@ -90,9 +90,9 @@ await run("landing mobile navigation and responsiveness", async () => {
 
 await run("login route is built", async () => {
   const res = await go(desktop, "/login");
-  if (!res || ![200, 500].includes(res.status())) throw new Error("unexpected HTTP " + (res?.status()));
+  if (!res || res.status() !== 200) throw new Error("unexpected HTTP " + (res?.status()));
   const body = await desktop.locator("body").innerText();
-  if (!body.includes("Welcome back") && !body.includes("Sign in")) {
+  if (!body.includes("Welcome back") && !body.includes("Sign-in is temporarily unavailable")) {
     throw new Error("Login page has no visible authentication UI");
   }
   await assertNoOverflow(desktop, "login desktop");
@@ -103,7 +103,7 @@ await run("signup route is built", async () => {
   const res = await go(desktop, "/signup");
   if (!res || ![200, 500].includes(res.status())) throw new Error("unexpected HTTP " + (res?.status()));
   const body = await desktop.locator("body").innerText();
-  if (!body.includes("Start your free trial") && !body.includes("Sign up")) {
+  if (!body.includes("Start your free trial") && !body.includes("Sign-up is temporarily unavailable")) {
     throw new Error("Signup page has no visible registration UI");
   }
   await assertNoOverflow(desktop, "signup desktop");
@@ -141,7 +141,7 @@ await run("revenue leak audit journey", async () => {
 await run("public-site routes fail safely for unknown slug", async () => {
   const s = await go(desktop, "/s/browser-test-no-site");
   if (!s || s.status() !== 200) throw new Error("/s unknown slug expected 200 fallback, got " + (s?.status()));
-  await assertText(desktop, "Site not live", "public site fallback");
+  await assertText(desktop, "This site isn't live yet", "public site fallback");
   const g = await go(desktop, "/go/browser-test-no-site");
   if (!g || g.status() !== 404) throw new Error("/go unknown slug expected 404, got " + (g?.status()));
 });
