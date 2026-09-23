@@ -45,6 +45,14 @@ export function createPayfastSignature(
   return createHash("md5").update(salted).digest("hex");
 }
 
+export function createPayfastApiSignature(data: Record<string, string | number>, passphrase: string) {
+  const sorted = Object.keys(data).sort().reduce<Record<string, string | number>>((acc, key) => {
+    acc[key] = data[key];
+    return acc;
+  }, {});
+  return createPayfastSignature(sorted, passphrase);
+}
+
 export function buildCheckoutFields(opts: {
   merchantId: string;
   merchantKey: string;
@@ -62,16 +70,18 @@ export function buildCheckoutFields(opts: {
     return_url: opts.returnUrl,
     cancel_url: opts.cancelUrl,
     notify_url: opts.notifyUrl,
+  };
+  if (opts.buyerEmail) data.email_address = opts.buyerEmail;
+  Object.assign(data, {
     m_payment_id: opts.paymentId,
     amount: opts.amount.toFixed(2),
     item_name: opts.itemName,
     subscription_type: "1",
+    billing_date: new Date().toISOString().slice(0, 10),
     recurring_amount: opts.amount.toFixed(2),
     frequency: "3",
     cycles: "0",
-    billing_date: new Date().toISOString().slice(0, 10),
-  };
-  if (opts.buyerEmail) data.email_address = opts.buyerEmail;
+  });
   return data;
 }
 
@@ -160,7 +170,7 @@ export async function payfastApiRequest(token: string, action: "cancel" | "pause
     timestamp,
     ...body,
   };
-  const signature = createPayfastSignature(signatureData, passphrase);
+  const signature = createPayfastApiSignature(signatureData, passphrase);
   const url = `https://api.payfast.co.za/subscriptions/${encodeURIComponent(token)}/${action}${payfastMode() === "sandbox" ? "?testing=true" : ""}`;
   const response = await fetch(url, {
     method: "PUT",
