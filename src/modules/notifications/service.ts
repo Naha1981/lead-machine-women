@@ -1,10 +1,10 @@
-// Lead Machine — notifications service (Phase 5: real WhatsApp via Evolution).
+// Lead Machine — notifications service via the shared NahaLabs WhatsApp Operator.
 //
 // sendLeadNotifications(org, lead) is the SINGLE entry point called by the
 // leads route on lead create + AI qualification. It:
 //   1. Builds the OWNER notification + PROSPECT confirmation messages.
-//   2. If Evolution is configured AND SIMULATE_WHATSAPP !== 'true': sends both
-//      via the Evolution client, then logs each to whatsapp_messages with
+//   2. If the WhatsApp Operator is configured AND SIMULATE_WHATSAPP !== 'true': sends both
+//      via the Operator, then logs each to whatsapp_messages with
 //      status 'sent' or 'failed'.
 //   3. Else (simulate / unconfigured): logs both to whatsapp_messages with
 //      status 'simulated' (preserves the old log-only behavior exactly).
@@ -13,10 +13,9 @@
 // already saved; WhatsApp failure must not break lead capture.
 import { createMessage } from "@/modules/whatsapp/service";
 import {
-  isConfigured,
+  operatorConfigured,
   sendText,
-  normalizePhone,
-} from "@/lib/integrations/evolution/client";
+} from "@/lib/integrations/whatsapp-operator/client";
 
 type LeadTemp = "hot" | "warm" | "cold" | null;
 
@@ -24,6 +23,7 @@ type OrgForNotifications = {
   id: string;
   name: string;
   whatsappNumber: string | null;
+  whatsappAccountId: string | null;
   ownerPhone: string | null;
 };
 
@@ -63,14 +63,13 @@ Reply fast — speed wins this client. Call them within 2 hours to maximise conv
 
 function buildProspectMessage(org: OrgForNotifications, lead: LeadForNotifications): string {
   const firstName = lead.name.split(" ")[0] || lead.name;
-  const ref = `#${lead.id.slice(-6).toUpperCase()}`;
   return `Hi ${firstName} 👋
 
 Thanks for reaching out to ${org.name}! We've received your enquiry.
 
 Our team will WhatsApp or call you within 2 hours during business hours (Mon-Fri 8am-5pm SAST).
 
-Reference: ${ref}
+Reference: #${lead.id.slice(-6).toUpperCase()}
 
 — ${org.name}`;
 }
@@ -82,8 +81,7 @@ export type SendLeadNotificationsResult = {
 };
 
 /**
- * Send lead notifications (owner + prospect) via WhatsApp. Uses real Evolution
- * API if configured + SIMULATE_WHATSAPP !== 'true'; otherwise logs as 'simulated'.
+ * Send lead notifications (owner + prospect) via WhatsApp. Uses the shared Operator when configured; otherwise logs as 'simulated'.
  * NEVER throws.
  */
 export async function sendLeadNotifications(
@@ -92,13 +90,11 @@ export async function sendLeadNotifications(
 ): Promise<SendLeadNotificationsResult> {
   const ownerMessage = buildOwnerMessage(org, lead);
   const prospectMessage = buildProspectMessage(org, lead);
-  const ref = `#${lead.id.slice(-6).toUpperCase()}`;
-
   const shouldSimulate =
-    !isConfigured() || process.env.SIMULATE_WHATSAPP === "true";
+    !operatorConfigured() || !org.whatsappAccountId || process.env.SIMULATE_WHATSAPP === "true";
 
   // Determine the owner's phone (prefer whatsappNumber, fall back to ownerPhone)
-  const ownerPhone = org.whatsappNumber || org.ownerPhone;
+  const ownerPhone = org.ownerPhone || org.whatsappNumber;
 
   let ownerSent = false;
   let prospectSent = false;
@@ -111,7 +107,7 @@ export async function sendLeadNotifications(
           orgId: org.id,
           leadId: lead.id,
           direction: "outbound",
-          phoneNumber: normalizePhone(ownerPhone),
+          phoneNumber: ownerPhone,
           content: ownerMessage,
           messageType: "text",
           status: "simulated",
@@ -121,19 +117,19 @@ export async function sendLeadNotifications(
         console.error("[notifications] owner simulate log failed:", e);
       }
     } else {
-      const result = await sendText(ownerPhone, ownerMessage);
+      const result = await sendText({ waAccountId: org.whatsappAccountId!, orgId: org.id, to: ownerPhone, text: ownerMessage });
       try {
         await createMessage({
           orgId: org.id,
           leadId: lead.id,
           direction: "outbound",
-          phoneNumber: normalizePhone(ownerPhone),
+          phoneNumber: ownerPhone,
           content: ownerMessage,
           messageType: "text",
           status: result.ok ? "sent" : "failed",
         });
-        ownerSent = result.ok;
-        if (!result.ok) {
+        ownerSent = result.ok !== false;
+        if (result.ok === false) {
           console.error("[notifications] owner send failed:", result.error);
         }
       } catch (e) {
@@ -149,7 +145,7 @@ export async function sendLeadNotifications(
         orgId: org.id,
         leadId: lead.id,
         direction: "outbound",
-        phoneNumber: normalizePhone(lead.phone),
+        phoneNumber: lead.phone,
         content: prospectMessage,
         messageType: "text",
         status: "simulated",
@@ -159,18 +155,18 @@ export async function sendLeadNotifications(
       console.error("[notifications] prospect simulate log failed:", e);
     }
   } else {
-    const result = await sendText(lead.phone, prospectMessage);
+    const result = await sendText({ waAccountId: org.whatsappAccountId!, orgId: org.id, to: lead.phone, text: prospectMessage });
     try {
       await createMessage({
         orgId: org.id,
         leadId: lead.id,
         direction: "outbound",
-        phoneNumber: normalizePhone(lead.phone),
+        phoneNumber: lead.phone,
         content: prospectMessage,
         messageType: "text",
         status: result.ok ? "sent" : "failed",
       });
-      prospectSent = result.ok;
+      prospectSent = result.ok !== false;
       if (!result.ok) {
         console.error("[notifications] prospect send failed:", result.error);
       }

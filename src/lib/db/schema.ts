@@ -166,6 +166,9 @@ export const subscriptions = pgTable("subscriptions", {
   currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  provider: varchar("provider", { length: 30 }).default("payfast").notNull(),
+  providerPaymentId: varchar("provider_payment_id", { length: 120 }),
+  providerToken: varchar("provider_token", { length: 160 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

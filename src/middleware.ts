@@ -51,6 +51,7 @@ export default clerkMiddleware(async (auth, req) => {
   // without env vars), skip auth.protect() so the app still runs. Protected
   // route handlers will 401 via auth() returning null userId at the handler
   // level.
+  if (process.env.ENABLE_DEMO_MODE === "true") return;
   if (!process.env.CLERK_SECRET_KEY) return;
   if (isProtectedRoute(req)) {
     await auth.protect();

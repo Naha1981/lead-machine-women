@@ -6,6 +6,7 @@ import { getOrgBySlug } from "@/modules/orgs/service";
 import { createLead, updateLeadFlags, listLeadsForOrg } from "@/modules/leads/service";
 import { qualifyLead } from "@/lib/ai";
 import { sendLeadNotifications } from "@/modules/notifications/service";
+import { scheduleLeadFollowUps } from "@/modules/followups/service";
 
 export const dynamic = "force-dynamic";
 
@@ -120,6 +121,7 @@ export async function POST(req: Request) {
           id: org.id,
           name: org.name,
           whatsappNumber: org.whatsappNumber,
+          whatsappAccountId: org.whatsappAccountId,
           ownerPhone: org.ownerPhone,
         },
         {
@@ -140,6 +142,21 @@ export async function POST(req: Request) {
 
     if (whatsappSent || ownerNotified) {
       await updateLeadFlags(lead.id, { whatsappSent, ownerNotified });
+    }
+
+    try {
+      await scheduleLeadFollowUps({
+        id: lead.id,
+        orgId: lead.orgId,
+        name: lead.name,
+        phone: lead.phone,
+        serviceNeeded: lead.serviceNeeded,
+        consentGiven: lead.consentGiven,
+        optedOutAt: lead.optedOutAt,
+        status: lead.status,
+      }, org.name);
+    } catch (e) {
+      console.error("[followups schedule]", e);
     }
 
     return NextResponse.json({
@@ -192,6 +209,7 @@ export async function GET(req: Request) {
       whatsappSent: l.whatsappSent,
       ownerNotified: l.ownerNotified,
       consentGiven: l.consentGiven,
+      optedOutAt: l.optedOutAt?.toISOString() ?? null,
       createdAt: l.createdAt.toISOString(),
       updatedAt: l.updatedAt.toISOString(),
     }));

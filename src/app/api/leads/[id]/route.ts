@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getOrCreateUserByClerkId, getOwnedOrgForUser } from "@/modules/auth/service";
 import { updateLeadStatus } from "@/modules/leads/service";
+import { cancelLeadFollowUps } from "@/modules/followups/service";
 
 const schema = z.object({
   status: z.enum(["new", "contacted", "qualified", "won", "lost"]),
@@ -32,6 +33,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const lead = await updateLeadStatus(id, org.id, parsed.data.status);
     if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
+    if (parsed.data.status === "won" || parsed.data.status === "lost") {
+      await cancelLeadFollowUps(id, org.id);
+    }
+
     return NextResponse.json({
       lead: {
         id: lead.id,
@@ -49,6 +54,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         whatsappSent: lead.whatsappSent,
         ownerNotified: lead.ownerNotified,
         consentGiven: lead.consentGiven,
+        optedOutAt: lead.optedOutAt?.toISOString() ?? null,
         createdAt: lead.createdAt.toISOString(),
         updatedAt: lead.updatedAt.toISOString(),
       },

@@ -8,6 +8,7 @@ import {
   Settings as SettingsIcon,
   CreditCard,
   ClipboardCheck,
+  BarChart3,
   Menu,
   ExternalLink,
   LogOut,
@@ -47,6 +48,7 @@ const NAV: { tab: DashboardTab; label: string; icon: React.ElementType }[] = [
   { tab: "leads", label: "Leads", icon: Users },
   { tab: "website", label: "Website", icon: Globe },
   { tab: "audit", label: "Fix Workspace", icon: ClipboardCheck },
+  { tab: "analytics", label: "Analytics", icon: BarChart3 },
   { tab: "settings", label: "Settings", icon: SettingsIcon },
   { tab: "billing", label: "Billing", icon: CreditCard },
 ];

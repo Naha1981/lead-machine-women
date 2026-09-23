@@ -62,55 +62,6 @@ const COLOR_SWATCHES = [
   "#ca8a04",
 ];
 
-// ---------- Fake QR (SVG) ----------
-function FakeQR() {
-  // 21x21 grid with three corner finder patterns (like a real QR)
-  const N = 21;
-  const cells: boolean[] = [];
-  // deterministic pseudo-random
-  let seed = 7;
-  const rand = () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return (seed >> 8) & 1;
-  };
-  for (let y = 0; y < N; y++) {
-    for (let x = 0; x < N; x++) {
-      // finder patterns at (0,0), (0,N-7), (N-7,0)
-      const inFinder = (ox: number, oy: number) => {
-        const dx = x - ox;
-        const dy = y - oy;
-        if (dx < 0 || dx > 6 || dy < 0 || dy > 6) return null;
-        if ((dx === 0 || dx === 6 || dy === 0 || dy === 6)) return true;
-        if (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4) return true;
-        return false;
-      };
-      let v: boolean | null = inFinder(0, 0);
-      if (v === null) v = inFinder(N - 7, 0);
-      if (v === null) v = inFinder(0, N - 7);
-      if (v === null) v = rand() === 1;
-      cells.push(v);
-    }
-  }
-  const cell = 10;
-  const size = N * cell;
-  return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className="size-56 rounded-lg bg-white p-2 shadow-sm"
-      role="img"
-      aria-label="QR code to scan with WhatsApp Business"
-    >
-      <rect width={size} height={size} fill="white" />
-      {cells.map((on, i) => {
-        if (!on) return null;
-        const x = (i % N) * cell;
-        const y = Math.floor(i / N) * cell;
-        return <rect key={i} x={x} y={y} width={cell} height={cell} fill="#0f172a" />;
-      })}
-    </svg>
-  );
-}
-
 // ---------- Business Profile ----------
 function BusinessProfileCard() {
   const org = useAppStore((s) => s.org);
@@ -299,40 +250,92 @@ function WhatsAppConnectionCard() {
   const setSession = useAppStore((s) => s.setSession);
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [whatsappNumber, setWhatsappNumber] = React.useState(
-    org?.whatsappNumber ?? ""
-  );
-  const [connecting, setConnecting] = React.useState(false);
+  const [whatsappNumber, setWhatsappNumber] = React.useState(org?.whatsappNumber ?? "");
+  const [qrCode, setQrCode] = React.useState<string | null>(null);
+  const [pairingCode, setPairingCode] = React.useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [pairing, setPairing] = React.useState(false);
 
   React.useEffect(() => {
     if (org?.whatsappNumber) setWhatsappNumber(org.whatsappNumber);
   }, [org?.whatsappNumber]);
 
-  async function handleScanned() {
-    setConnecting(true);
+  React.useEffect(() => {
+    if (!dialogOpen) return;
+    let stopped = false;
+
+    const poll = async () => {
+      try {
+        const [qr, status] = await Promise.all([
+          apiClient.getWhatsappQr().catch(() => null),
+          apiClient.getWhatsappStatus().catch(() => null),
+        ]);
+        if (stopped) return;
+        if (status?.org) setSession(user, status.org);
+        if (status?.status?.isConnected) {
+          setDialogOpen(false);
+          toast.success("WhatsApp connected");
+          return;
+        }
+        if (qr?.qrCode) {
+          setQrCode(qr.qrCode);
+          setExpiresAt(qr.qrExpiresAt ?? null);
+        }
+      } catch {
+        // transient polling failures are expected while the Operator reconnects
+      }
+    };
+
+    void poll();
+    const timer = window.setInterval(poll, 3000);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [dialogOpen, setSession, user]);
+
+  async function handleConnect() {
+    setLoading(true);
     try {
-      const res = await apiClient.updateOrg({
-        whatsappConnected: true,
-        whatsappNumber:
-          whatsappNumber.trim() || org?.ownerPhone || "+27 00 000 0000",
-      });
-      setSession(user, res.org);
-      toast.success("WhatsApp connected");
-      setDialogOpen(false);
+      const result = await apiClient.startWhatsappConnection();
+      setQrCode(null);
+      setPairingCode(null);
+      setExpiresAt(null);
+      setDialogOpen(true);
+      toast.success(result.status === "connected" ? "WhatsApp already connected" : "Waiting for WhatsApp QR");
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed to connect");
+      toast.error(e?.message ?? "Failed to start WhatsApp connection");
     } finally {
-      setConnecting(false);
+      setLoading(false);
+    }
+  }
+
+  async function handlePairingCode() {
+    if (!whatsappNumber.trim()) {
+      toast.error("Enter the WhatsApp number in international format first");
+      return;
+    }
+    setPairing(true);
+    try {
+      const result = await apiClient.requestWhatsappPairingCode(whatsappNumber.trim());
+      setPairingCode(result.pairingCodeDisplay ?? result.pairingCode ?? null);
+      setExpiresAt(result.expiresAt ?? null);
+      setQrCode(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to create pairing code");
+    } finally {
+      setPairing(false);
     }
   }
 
   async function handleDisconnect() {
     try {
-      const res = await apiClient.updateOrg({ whatsappConnected: false });
+      const res = await apiClient.disconnectWhatsapp();
       setSession(user, res.org);
       toast.success("WhatsApp disconnected");
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed");
+      toast.error(e?.message ?? "Failed to disconnect");
     }
   }
 
@@ -349,7 +352,7 @@ function WhatsAppConnectionCard() {
             <div>
               <CardTitle className="text-base">WhatsApp Connection</CardTitle>
               <CardDescription className="text-xs">
-                Send lead confirmations and owner alerts via WhatsApp.
+                Connect the business&apos;s own WhatsApp number for lead alerts, confirmations and follow-up.
               </CardDescription>
             </div>
           </div>
@@ -371,31 +374,23 @@ function WhatsAppConnectionCard() {
           <div className="rounded-md bg-emerald-50 p-3">
             <p className="flex items-center gap-2 text-sm font-medium text-emerald-800">
               <Smartphone className="size-4" />
-              Connected to{" "}
-              <span className="font-mono">
-                {org?.whatsappNumber || org?.ownerPhone || "your number"}
-              </span>
+              Connected to <span className="font-mono">{org?.whatsappNumber || "your number"}</span>
             </p>
             <p className="mt-1 text-xs text-emerald-700">
-              Hot leads are pushed here automatically.
+              Lead alerts and approved follow-up messages can now use this number.
             </p>
           </div>
         ) : (
           <div className="rounded-md bg-amber-50 p-3">
-            <p className="text-sm font-medium text-amber-800">
-              WhatsApp is not connected yet
-            </p>
+            <p className="text-sm font-medium text-amber-800">WhatsApp is not connected yet</p>
             <p className="mt-1 text-xs text-amber-700">
-              Connect a WhatsApp Business number to send prospect
-              confirmations and receive hot lead alerts.
+              Connect the business number by scanning a real WhatsApp Linked Devices QR or using WhatsApp&apos;s phone-number pairing code.
             </p>
           </div>
         )}
 
         <div className="space-y-1.5">
-          <Label htmlFor="wa-number" className="text-xs font-medium">
-            WhatsApp Business Number
-          </Label>
+          <Label htmlFor="wa-number" className="text-xs font-medium">WhatsApp Business Number</Label>
           <Input
             id="wa-number"
             value={whatsappNumber}
@@ -407,53 +402,23 @@ function WhatsAppConnectionCard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                disabled={connected}
-                className="bg-emerald-600 text-white hover:bg-emerald-700"
-              >
-                <QrCode className="size-4" />
-                Connect WhatsApp
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <MessageCircle className="size-5 text-emerald-600" />
-                  Connect WhatsApp Business
-                </DialogTitle>
-                <DialogDescription>
-                  Scan this QR code with your WhatsApp Business app to connect
-                  your number to Lead Machine.
-                </DialogDescription>
-              </DialogHeader>
+          <Button
+            onClick={handleConnect}
+            disabled={connected || loading}
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            <QrCode className="size-4" />
+            {loading ? "Starting..." : "Connect with QR"}
+          </Button>
 
-              <div className="flex flex-col items-center gap-3 py-2">
-                <FakeQR />
-                <p className="text-center text-xs text-muted-foreground">
-                  Open WhatsApp Business → Settings → Linked Devices → Scan QR
-                </p>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleScanned}
-                  disabled={connecting}
-                  className="bg-emerald-600 text-white hover:bg-emerald-700"
-                >
-                  <Check className="size-4" />
-                  {connecting ? "Connecting..." : "I've scanned it"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button
+            variant="outline"
+            onClick={() => { setDialogOpen(true); setPairingCode(null); void handlePairingCode(); }}
+            disabled={connected || pairing}
+          >
+            <Smartphone className="size-4" />
+            {pairing ? "Creating code..." : "Use phone number"}
+          </Button>
 
           {connected && (
             <Button
@@ -466,13 +431,65 @@ function WhatsAppConnectionCard() {
           )}
         </div>
 
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageCircle className="size-5 text-emerald-600" />
+                Connect WhatsApp
+              </DialogTitle>
+              <DialogDescription>
+                Link the business owner&apos;s own WhatsApp account. Lead Machine never asks for the WhatsApp password.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex flex-col items-center gap-4 py-2">
+              {qrCode ? (
+                <img
+                  src={qrCode}
+                  alt="WhatsApp pairing QR code"
+                  className="size-64 rounded-lg border bg-white p-2"
+                />
+              ) : pairingCode ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-8 py-6 text-center">
+                  <p className="text-xs font-medium uppercase tracking-widest text-emerald-700">Pairing code</p>
+                  <p className="mt-2 font-mono text-3xl font-bold tracking-widest text-slate-900">{pairingCode}</p>
+                </div>
+              ) : (
+                <div className="flex size-64 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-sm text-muted-foreground">
+                  Waiting for a fresh QR…
+                </div>
+              )}
+
+              {expiresAt && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Expires {new Date(expiresAt).toLocaleTimeString("en-ZA")}
+                </p>
+              )}
+
+              {qrCode && (
+                <p className="text-center text-xs text-muted-foreground">
+                  WhatsApp → Linked Devices → Link a device → scan this code.
+                </p>
+              )}
+
+              {pairingCode && (
+                <p className="text-center text-xs text-muted-foreground">
+                  WhatsApp → Linked Devices → Link with phone number instead → enter this code.
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <div className="flex items-start gap-2 rounded-md bg-slate-50 p-3 text-xs text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" />
           <p>
-            Lead Machine uses{" "}
-            <span className="font-medium text-slate-700">Evolution API</span> to
-            send WhatsApp notifications. One number per business. POPIA consent
-            is captured on every form.
+            WhatsApp transport is provided by the NahaLabs shared Operator. It uses WhatsApp Linked Devices and is not the official Meta Cloud API. POPIA consent is still captured for website leads.
           </p>
         </div>
       </CardContent>

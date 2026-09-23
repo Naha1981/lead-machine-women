@@ -9,6 +9,13 @@ export type LeadRow = typeof leads.$inferSelect;
 export type LeadTemperature = "hot" | "warm" | "cold";
 export type LeadStatus = "new" | "contacted" | "qualified" | "won" | "lost";
 
+
+function normalizeLeadPhone(value: string): string {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = "27" + digits.slice(1);
+  return digits;
+}
+
 export async function createLead(opts: {
   orgId: string;
   name: string;
@@ -24,6 +31,7 @@ export async function createLead(opts: {
   consentGiven?: boolean;
   whatsappSent?: boolean;
   ownerNotified?: boolean;
+  optedOutAt?: Date | null;
 }): Promise<LeadRow> {
   const db = await getDb();
   const rows = await db
@@ -31,7 +39,7 @@ export async function createLead(opts: {
     .values({
       orgId: opts.orgId,
       name: opts.name,
-      phone: opts.phone,
+      phone: normalizeLeadPhone(opts.phone),
       email: opts.email ?? null,
       serviceNeeded: opts.serviceNeeded ?? null,
       message: opts.message ?? null,
@@ -43,6 +51,7 @@ export async function createLead(opts: {
       consentGiven: opts.consentGiven ?? false,
       whatsappSent: opts.whatsappSent ?? false,
       ownerNotified: opts.ownerNotified ?? false,
+      optedOutAt: opts.optedOutAt ?? null,
     })
     .returning();
   const lead = rows[0];
@@ -97,6 +106,25 @@ export async function setLeadQualification(
       payload: { leadId, score: opts.score, temperature: opts.temperature },
     });
   }
+  return lead;
+}
+
+export async function findLeadByPhone(orgId: string, phone: string): Promise<LeadRow | null> {
+  const db = await getDb();
+  const rows = await db.select().from(leads)
+    .where(and(eq(leads.orgId, orgId), eq(leads.phone, normalizeLeadPhone(phone))))
+    .orderBy(desc(leads.createdAt)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function optOutLead(leadId: string, orgId: string): Promise<LeadRow | null> {
+  const db = await getDb();
+  const rows = await db.update(leads)
+    .set({ optedOutAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(leads.id, leadId), eq(leads.orgId, orgId)))
+    .returning();
+  const lead = rows[0] ?? null;
+  if (lead) await emitEvent({ orgId, eventType: "lead.opted_out", payload: { leadId } });
   return lead;
 }
 

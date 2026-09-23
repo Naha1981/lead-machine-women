@@ -37,7 +37,7 @@ export function operatorConfigured(): boolean {
 
 function config() {
   return {
-    url: (process.env.OPERATOR_URL || "").replace(/\\/+$/, ""),
+    url: (process.env.OPERATOR_URL || "").replace(/\/+$/, ""),
     apiKey: process.env.OPERATOR_API_KEY || "",
     webhookSecret: process.env.WEBHOOK_SECRET || "",
     appId: process.env.NEXT_PUBLIC_APP_ID || "lead-machine",
@@ -144,7 +144,7 @@ export async function sendText(opts: {
   to: string;
   text: string;
 }) {
-  return operatorFetch<{ ok?: boolean; messageId?: string }>(
+  return operatorFetch<{ ok?: boolean; messageId?: string; error?: string }>(
     "/send",
     {
       method: "POST",

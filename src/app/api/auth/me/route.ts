@@ -37,6 +37,7 @@ export async function GET() {
           logoUrl: o.logoUrl,
           primaryColor: o.primaryColor,
           whatsappNumber: o.whatsappNumber,
+          whatsappAccountId: o.whatsappAccountId,
           whatsappConnected: o.whatsappConnected,
           ownerPhone: o.ownerPhone,
           plan: o.plan,

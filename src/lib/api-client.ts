@@ -114,7 +114,8 @@ export const apiClient = {
   resetWhatsapp: () => api<{ ok: boolean }>("/api/whatsapp/reset", { method: "POST" }),
   getAnalytics: () => api<any>("/api/analytics"),
   subscribe: (plan: "starter" | "growth" | "agency") =>
-    api<{ ok: boolean; subscription: any }>("/api/billing/subscribe", { method: "POST", body: JSON.stringify({ plan }) }),
+    api<{ ok: boolean; paymentId: string; checkoutUrl: string }>("/api/billing/subscribe", { method: "POST", body: JSON.stringify({ plan }) }),
+  cancelSubscription: () => api<{ ok: boolean; subscription: any }>("/api/billing/cancel", { method: "POST" }),
   getBilling: () => api<{ subscription: Subscription | null; orgPlan: string; trialEndsAt: string | null }>("/api/billing/subscribe"),
 };
 

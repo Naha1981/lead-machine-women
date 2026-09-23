@@ -91,6 +91,7 @@ export async function getOwnedOrgForUser(userId: string): Promise<OrgForOwner | 
       logoUrl: organizations.logoUrl,
       primaryColor: organizations.primaryColor,
       whatsappNumber: organizations.whatsappNumber,
+      whatsappAccountId: organizations.whatsappAccountId,
       whatsappConnected: organizations.whatsappConnected,
       ownerPhone: organizations.ownerPhone,
       plan: organizations.plan,
