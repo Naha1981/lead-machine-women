@@ -105,6 +105,14 @@ export const apiClient = {
   },
 
   getWhatsappMessages: () => api<{ messages: WhatsAppMessage[] }>("/api/whatsapp/messages"),
+  getWhatsappStatus: () => api<{ configured: boolean; accountId: string | null; status?: any; org: Org }>("/api/whatsapp/status"),
+  startWhatsappConnection: () => api<{ accountId: string; status: string }>("/api/whatsapp/connect", { method: "POST" }),
+  getWhatsappQr: () => api<any>("/api/whatsapp/qr"),
+  requestWhatsappPairingCode: (phoneNumber: string) =>
+    api<any>("/api/whatsapp/pairing-code", { method: "POST", body: JSON.stringify({ phoneNumber }) }),
+  disconnectWhatsapp: () => api<{ ok: boolean; org: Org }>("/api/whatsapp/disconnect", { method: "POST" }),
+  resetWhatsapp: () => api<{ ok: boolean }>("/api/whatsapp/reset", { method: "POST" }),
+  getAnalytics: () => api<any>("/api/analytics"),
   subscribe: (plan: "starter" | "growth" | "agency") =>
     api<{ ok: boolean; subscription: any }>("/api/billing/subscribe", { method: "POST", body: JSON.stringify({ plan }) }),
   getBilling: () => api<{ subscription: Subscription | null; orgPlan: string; trialEndsAt: string | null }>("/api/billing/subscribe"),
