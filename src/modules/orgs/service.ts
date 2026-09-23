@@ -98,9 +98,11 @@ export async function updateOrg(
     industry: string;
     services: string;
     whatsappNumber: string;
+    whatsappAccountId: string;
     ownerPhone: string;
     primaryColor: string;
     whatsappConnected: boolean;
+    whatsappAccountId: string;
   }>
 ): Promise<OrgRow> {
   const db = await getDb();

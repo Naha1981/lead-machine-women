@@ -97,6 +97,7 @@ async function ensureSchema(db: any): Promise<void> {
       "logo_url" varchar(500),
       "primary_color" varchar(9) NOT NULL DEFAULT '#059669',
       "whatsapp_number" varchar(30),
+      "whatsapp_account_id" varchar(120),
       "whatsapp_connected" boolean NOT NULL DEFAULT false,
       "owner_phone" varchar(30),
       "plan" varchar(20) NOT NULL DEFAULT 'trial',
@@ -131,6 +132,7 @@ async function ensureSchema(db: any): Promise<void> {
       "whatsapp_sent" boolean NOT NULL DEFAULT false,
       "owner_notified" boolean NOT NULL DEFAULT false,
       "consent_given" boolean NOT NULL DEFAULT false,
+      "opted_out_at" timestamptz,
       "created_at" timestamptz NOT NULL DEFAULT now(),
       "updated_at" timestamptz NOT NULL DEFAULT now()
     )`,
@@ -173,8 +175,27 @@ async function ensureSchema(db: any): Promise<void> {
       "current_period_start" timestamptz,
       "current_period_end" timestamptz,
       "cancelled_at" timestamptz,
+      "provider" varchar(30) NOT NULL DEFAULT 'payfast',
+      "provider_payment_id" varchar(120),
+      "provider_token" varchar(160),
       "created_at" timestamptz NOT NULL DEFAULT now()
     )`,
+    `CREATE TABLE IF NOT EXISTS "follow_up_jobs" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      "org_id" uuid NOT NULL REFERENCES "organizations"("id") ON DELETE cascade,
+      "lead_id" uuid NOT NULL REFERENCES "leads"("id") ON DELETE cascade,
+      "channel" varchar(20) NOT NULL DEFAULT 'whatsapp',
+      "message" text NOT NULL,
+      "scheduled_at" timestamptz NOT NULL,
+      "status" varchar(20) NOT NULL DEFAULT 'pending',
+      "attempts" integer NOT NULL DEFAULT 0,
+      "last_attempt_at" timestamptz,
+      "sent_at" timestamptz,
+      "created_at" timestamptz NOT NULL DEFAULT now()
+    )`,
+    `CREATE INDEX IF NOT EXISTS "follow_up_jobs_org_scheduled_idx" ON "follow_up_jobs" ("org_id", "scheduled_at")`,
+    `CREATE INDEX IF NOT EXISTS "follow_up_jobs_status_scheduled_idx" ON "follow_up_jobs" ("status", "scheduled_at")`,
+    `CREATE INDEX IF NOT EXISTS "follow_up_jobs_lead_id_idx" ON "follow_up_jobs" ("lead_id")`,
     `CREATE TABLE IF NOT EXISTS "events" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       "org_id" uuid REFERENCES "organizations"("id") ON DELETE cascade,

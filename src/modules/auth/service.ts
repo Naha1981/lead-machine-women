@@ -69,6 +69,7 @@ export type OrgForOwner = {
   logoUrl: string | null;
   primaryColor: string;
   whatsappNumber: string | null;
+  whatsappAccountId: string | null;
   whatsappConnected: boolean;
   ownerPhone: string | null;
   plan: string;

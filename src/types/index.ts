@@ -15,6 +15,7 @@ export type Org = {
   logoUrl: string | null;
   primaryColor: string;
   whatsappNumber: string | null;
+  whatsappAccountId: string | null;
   whatsappConnected: boolean;
   ownerPhone: string | null;
   plan: string;
@@ -39,6 +40,7 @@ export type Lead = {
   whatsappSent: boolean;
   ownerNotified: boolean;
   consentGiven: boolean;
+  optedOutAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -88,4 +90,4 @@ export type Subscription = {
 export type AppView = "landing" | "auth" | "onboarding" | "dashboard" | "public";
 export type AuditProjectStatus = "diagnosed" | "approved" | "building" | "deployed" | "verified";
 
-export type DashboardTab = "overview" | "leads" | "website" | "audit" | "settings" | "billing";
+export type DashboardTab = "overview" | "leads" | "website" | "audit" | "analytics" | "settings" | "billing";
