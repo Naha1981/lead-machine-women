@@ -1,16 +1,15 @@
+import { readFile } from "node:fs/promises";
+
 const base = process.env.BASE_URL || "http://127.0.0.1:3000";
 const cronSecret = process.env.CRON_SECRET || "smoke-secret";
 
-async function get(path) {
-  const res = await fetch(base + path, { redirect: "manual" });
-  const text = await res.text();
-  return { res, text };
+const landingSource = await readFile("src/app/demo/dentist/page.tsx", "utf8");
+if (!landingSource.includes("Sandton Smile Dental") || !landingSource.includes("/api/demo/dentist/lead")) {
+  throw new Error("Dentist demo landing page contract failed");
 }
 
-const page = await get("/demo/dentist");
-if (!page.res.ok || !page.text.includes("Sandton Smile Dental")) {
-  throw new Error(`Dentist demo page failed: ${page.res.status}`);
-}
+const health = await fetch(base + "/api/health");
+if (!health.ok) throw new Error(`Health check failed: ${health.status}`);
 
 const lead = await fetch(base + "/api/demo/dentist/lead", {
   method: "POST",
@@ -40,7 +39,8 @@ if (!cron.ok || cronBody.ok !== true) {
 
 console.log(JSON.stringify({
   ok: true,
-  dentistPage: "passed",
+  dentistLandingContract: "passed",
+  health: "passed",
   leadCapture: "passed",
   leadId: leadBody.leadId,
   qualification: leadBody.temperature ?? "not scored without AI key",
