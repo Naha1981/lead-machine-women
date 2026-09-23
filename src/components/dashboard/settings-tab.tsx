@@ -62,55 +62,6 @@ const COLOR_SWATCHES = [
   "#ca8a04",
 ];
 
-// ---------- Fake QR (SVG) ----------
-function FakeQR() {
-  // 21x21 grid with three corner finder patterns (like a real QR)
-  const N = 21;
-  const cells: boolean[] = [];
-  // deterministic pseudo-random
-  let seed = 7;
-  const rand = () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return (seed >> 8) & 1;
-  };
-  for (let y = 0; y < N; y++) {
-    for (let x = 0; x < N; x++) {
-      // finder patterns at (0,0), (0,N-7), (N-7,0)
-      const inFinder = (ox: number, oy: number) => {
-        const dx = x - ox;
-        const dy = y - oy;
-        if (dx < 0 || dx > 6 || dy < 0 || dy > 6) return null;
-        if ((dx === 0 || dx === 6 || dy === 0 || dy === 6)) return true;
-        if (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4) return true;
-        return false;
-      };
-      let v: boolean | null = inFinder(0, 0);
-      if (v === null) v = inFinder(N - 7, 0);
-      if (v === null) v = inFinder(0, N - 7);
-      if (v === null) v = rand() === 1;
-      cells.push(v);
-    }
-  }
-  const cell = 10;
-  const size = N * cell;
-  return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className="size-56 rounded-lg bg-white p-2 shadow-sm"
-      role="img"
-      aria-label="QR code to scan with WhatsApp Business"
-    >
-      <rect width={size} height={size} fill="white" />
-      {cells.map((on, i) => {
-        if (!on) return null;
-        const x = (i % N) * cell;
-        const y = Math.floor(i / N) * cell;
-        return <rect key={i} x={x} y={y} width={cell} height={cell} fill="#0f172a" />;
-      })}
-    </svg>
-  );
-}
-
 // ---------- Business Profile ----------
 function BusinessProfileCard() {
   const org = useAppStore((s) => s.org);
