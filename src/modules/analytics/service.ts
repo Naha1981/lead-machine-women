@@ -31,6 +31,21 @@ export async function getLeadAnalytics(orgId: string) {
   const qualified = Number(t.qualified);
   const inbound = Number(whatsapp[0]?.inbound ?? 0);
 
+  const outbound = Number(whatsapp[0]?.outbound ?? 0);
+  const sent = Number(whatsapp[0]?.sent ?? 0);
+  const learning: string[] = [];
+
+  if (total === 0) {
+    learning.push("Capture your first leads to start learning which services, sources and follow-up actions convert.");
+  } else {
+    const topSource = sources[0]?.source;
+    const topService = services[0]?.service;
+    if (topSource) learning.push(`Your biggest lead source so far is ${topSource}. Compare its lead quality with your other sources before increasing spend.`);
+    if (topService) learning.push(`The most requested service is ${topService}. Make its enquiry path especially easy to complete on mobile.`);
+    if (qualified > 0 && won === 0) learning.push("You have qualified leads but no recorded wins yet. The next learning signal is what happens between qualification and close.");
+    if (won > 0) learning.push(`${won} lead${won === 1 ? "" : "s"} are marked won. Keep recording won/lost outcomes so Lead Machine can learn which sources and services create revenue.`);
+  }
+
   return {
     totals: {
       total,
@@ -47,9 +62,10 @@ export async function getLeadAnalytics(orgId: string) {
     services,
     whatsapp: {
       inbound,
-      outbound: Number(whatsapp[0]?.outbound ?? 0),
-      sent: Number(whatsapp[0]?.sent ?? 0),
-      responseRate: inbound ? Math.min(100, Math.round((Number(whatsapp[0]?.outbound ?? 0) / inbound) * 100)) : 0,
+      outbound,
+      sent,
+      responseActivityRate: inbound ? Math.min(100, Math.round((outbound / inbound) * 100)) : 0,
     },
+    learning,
   };
 }
