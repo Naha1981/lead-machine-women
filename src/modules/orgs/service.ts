@@ -108,7 +108,6 @@ export async function updateOrg(
     ownerPhone: string;
     primaryColor: string;
     whatsappConnected: boolean;
-    whatsappAccountId: string;
   }>
 ): Promise<OrgRow> {
   const db = await getDb();
