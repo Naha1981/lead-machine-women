@@ -10,11 +10,14 @@ const clerkProxy = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) await auth.protect();
 });
 
-export default async function proxy(req: Parameters<typeof clerkProxy>[0]) {
+export default function proxy(
+  req: Parameters<typeof clerkProxy>[0],
+  event: Parameters<typeof clerkProxy>[1],
+) {
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
     return NextResponse.next();
   }
-  return clerkProxy(req);
+  return clerkProxy(req, event);
 }
 
 export const config = {
