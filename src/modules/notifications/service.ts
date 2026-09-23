@@ -98,7 +98,7 @@ export async function sendLeadNotifications(
     !operatorConfigured() || !org.whatsappAccountId || process.env.SIMULATE_WHATSAPP === "true";
 
   // Determine the owner's phone (prefer whatsappNumber, fall back to ownerPhone)
-  const ownerPhone = org.whatsappNumber || org.ownerPhone;
+  const ownerPhone = org.ownerPhone || org.whatsappNumber;
 
   let ownerSent = false;
   let prospectSent = false;
@@ -132,8 +132,8 @@ export async function sendLeadNotifications(
           messageType: "text",
           status: result.ok ? "sent" : "failed",
         });
-        ownerSent = result.ok;
-        if (!result.ok) {
+        ownerSent = result.ok !== false;
+        if (result.ok === false) {
           console.error("[notifications] owner send failed:", result.error);
         }
       } catch (e) {
@@ -170,7 +170,7 @@ export async function sendLeadNotifications(
         messageType: "text",
         status: result.ok ? "sent" : "failed",
       });
-      prospectSent = result.ok;
+      prospectSent = result.ok !== false;
       if (!result.ok) {
         console.error("[notifications] prospect send failed:", result.error);
       }
