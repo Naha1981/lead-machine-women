@@ -59,17 +59,17 @@ async function createPgliteClient(): Promise<DbClient> {
       } catch {
         /* ignore */
       }
-      const pg = new PGlite(dbDir);
+      const pg = process.env.CI === "true" ? new PGlite() : new PGlite(dbDir);
       const db = drizzle(pg, { schema: schema.schema });
       // Auto-create tables from the schema on first dev boot.
-      await ensureSchema(db);
+      await ensureSchema(pg);
       return db as unknown as DbClient;
     })();
   }
   return pgliteClientPromise;
 }
 
-async function ensureSchema(db: any): Promise<void> {
+async function ensureSchema(pg: any): Promise<void> {
   // Idempotent CREATE TABLE statements matching schema.ts. Using IF NOT EXISTS
   // so this is safe to run on every dev boot.
   const stmts = [
@@ -210,7 +210,7 @@ async function ensureSchema(db: any): Promise<void> {
   ];
   for (const s of stmts) {
     try {
-      await db.execute(s);
+      await pg.exec(s);
     } catch (e) {
       console.error("[db:pglite:init] statement failed:", s, (e as Error)?.message);
     }
