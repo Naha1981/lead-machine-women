@@ -108,6 +108,10 @@ await run("signup route is built", async () => {
   }
   await assertNoOverflow(desktop, "signup desktop");
   await screenshot(desktop, "04-signup");
+  await go(mobile, "/login");
+  await assertNoOverflow(mobile, "login mobile");
+  await go(mobile, "/signup");
+  await assertNoOverflow(mobile, "signup mobile");
 });
 
 await run("demo dentist full lead success journey", async () => {
@@ -135,10 +139,21 @@ await run("revenue leak audit journey", async () => {
   await assertText(desktop, "Fix these first.", "audit findings");
   await assertText(desktop, "Scenario output", "audit ROI calculator");
   await assertNoOverflow(desktop, "audit desktop");
+  await go(mobile, "/audit");
+  await assertNoOverflow(mobile, "audit mobile");
   await screenshot(desktop, "06-audit-results");
 });
 
-await run("public-site routes fail safely for unknown slug", async () => {
+await run("public website API returns not found for unknown slug", async () => {
+  const res = await desktop.request.get(base + "/api/website/public?slug=browser-test-no-site");
+  if (res.status() !== 404) throw new Error("/api/website/public expected 404, got " + res.status());
+});
+
+await run("database-backed public routes are environment gated", async () => {
+  if (!process.env.DATABASE_URL) {
+    console.log("SKIP database-backed /s and /go browser validation: DATABASE_URL not configured");
+    return;
+  }
   const s = await go(desktop, "/s/browser-test-no-site");
   if (!s || s.status() !== 200) throw new Error("/s unknown slug expected 200 fallback, got " + (s?.status()));
   await assertText(desktop, "This site isn't live yet", "public site fallback");
