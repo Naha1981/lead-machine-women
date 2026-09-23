@@ -126,11 +126,13 @@ await testPage(browser, "/s/qa-nonexistent-slug", [
 
 // Liveness endpoint.
 {
-  const response = await browser.request.get(base + "/api/health");
+  const api = await request.newContext();
+  const response = await api.get(base + "/api/health");
   const data = await response.json();
   if (response.status() !== 200 || data.status !== "ok") {
     recordFailure("/api/health", `Unexpected response: ${response.status()} ${JSON.stringify(data)}`);
   }
+  await api.dispose();
 }
 
 // Actual browser success-stage test: submit demo lead on mobile and verify success UI.
