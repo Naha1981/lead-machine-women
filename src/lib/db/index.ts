@@ -17,6 +17,7 @@
 // avoid module-level side effects that break in Next.js RSC (Server Component)
 // contexts with Turbopack.
 
+import { sql } from "drizzle-orm";
 import * as schema from "./schema";
 
 // We use `any` for the client type because the Neon and PGlite drizzle drivers
@@ -210,7 +211,7 @@ async function ensureSchema(db: any): Promise<void> {
   ];
   for (const s of stmts) {
     try {
-      await db.execute(s);
+      await db.execute(sql.raw(s));
     } catch (e) {
       console.error("[db:pglite:init] statement failed:", s, (e as Error)?.message);
     }
