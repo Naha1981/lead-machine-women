@@ -144,7 +144,7 @@ export async function sendText(opts: {
   to: string;
   text: string;
 }) {
-  return operatorFetch<{ ok?: boolean; messageId?: string }>(
+  return operatorFetch<{ ok?: boolean; messageId?: string; error?: string }>(
     "/send",
     {
       method: "POST",
