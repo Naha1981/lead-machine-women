@@ -13,6 +13,12 @@ export async function getOrgBySlug(slug: string): Promise<OrgRow | null> {
   return rows[0] ?? null;
 }
 
+export async function getOrgByWhatsAppAccountId(accountId: string): Promise<OrgRow | null> {
+  const db = await getDb();
+  const rows = await db.select().from(organizations).where(eq(organizations.whatsappAccountId, accountId)).limit(1);
+  return rows[0] ?? null;
+}
+
 export async function getOrgById(id: string): Promise<OrgRow | null> {
   const db = await getDb();
   const rows = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
