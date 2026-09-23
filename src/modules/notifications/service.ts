@@ -1,4 +1,4 @@
-// Lead Machine — notifications service (Phase 5: real WhatsApp via Evolution).
+// Lead Machine — notifications service via the shared NahaLabs WhatsApp Operator.
 //
 // sendLeadNotifications(org, lead) is the SINGLE entry point called by the
 // leads route on lead create + AI qualification. It:
@@ -13,10 +13,9 @@
 // already saved; WhatsApp failure must not break lead capture.
 import { createMessage } from "@/modules/whatsapp/service";
 import {
-  isConfigured,
+  operatorConfigured,
   sendText,
-  normalizePhone,
-} from "@/lib/integrations/evolution/client";
+} from "@/lib/integrations/whatsapp-operator/client";
 
 type LeadTemp = "hot" | "warm" | "cold" | null;
 
@@ -24,6 +23,7 @@ type OrgForNotifications = {
   id: string;
   name: string;
   whatsappNumber: string | null;
+  whatsappAccountId: string | null;
   ownerPhone: string | null;
 };
 
@@ -95,7 +95,7 @@ export async function sendLeadNotifications(
   const ref = `#${lead.id.slice(-6).toUpperCase()}`;
 
   const shouldSimulate =
-    !isConfigured() || process.env.SIMULATE_WHATSAPP === "true";
+    !operatorConfigured() || !org.whatsappAccountId || process.env.SIMULATE_WHATSAPP === "true";
 
   // Determine the owner's phone (prefer whatsappNumber, fall back to ownerPhone)
   const ownerPhone = org.whatsappNumber || org.ownerPhone;
@@ -111,7 +111,7 @@ export async function sendLeadNotifications(
           orgId: org.id,
           leadId: lead.id,
           direction: "outbound",
-          phoneNumber: normalizePhone(ownerPhone),
+          phoneNumber: ownerPhone,
           content: ownerMessage,
           messageType: "text",
           status: "simulated",
@@ -121,13 +121,13 @@ export async function sendLeadNotifications(
         console.error("[notifications] owner simulate log failed:", e);
       }
     } else {
-      const result = await sendText(ownerPhone, ownerMessage);
+      const result = await sendText({ waAccountId: org.whatsappAccountId!, orgId: org.id, to: ownerPhone, text: ownerMessage });
       try {
         await createMessage({
           orgId: org.id,
           leadId: lead.id,
           direction: "outbound",
-          phoneNumber: normalizePhone(ownerPhone),
+          phoneNumber: ownerPhone,
           content: ownerMessage,
           messageType: "text",
           status: result.ok ? "sent" : "failed",
@@ -149,7 +149,7 @@ export async function sendLeadNotifications(
         orgId: org.id,
         leadId: lead.id,
         direction: "outbound",
-        phoneNumber: normalizePhone(lead.phone),
+        phoneNumber: lead.phone,
         content: prospectMessage,
         messageType: "text",
         status: "simulated",
@@ -159,13 +159,13 @@ export async function sendLeadNotifications(
       console.error("[notifications] prospect simulate log failed:", e);
     }
   } else {
-    const result = await sendText(lead.phone, prospectMessage);
+    const result = await sendText({ waAccountId: org.whatsappAccountId!, orgId: org.id, to: lead.phone, text: prospectMessage });
     try {
       await createMessage({
         orgId: org.id,
         leadId: lead.id,
         direction: "outbound",
-        phoneNumber: normalizePhone(lead.phone),
+        phoneNumber: lead.phone,
         content: prospectMessage,
         messageType: "text",
         status: result.ok ? "sent" : "failed",
