@@ -1,0 +1,63 @@
+name: Browser E2E
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "scripts/browser-e2e.mjs"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/browser-e2e.yml"
+  push:
+    branches:
+      - main
+      - "test/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_APP_ID: lead-machine
+      ENABLE_DEMO_MODE: "true"
+      SIMULATE_WHATSAPP: "true"
+      CRON_SECRET: smoke-secret
+      ARTIFACT_DIR: artifacts/browser-e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Install Playwright for CI
+        run: bun add --no-save playwright
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+      - name: Start development server
+        run: |
+          nohup bun run dev > /tmp/lead-machine-dev.log 2>&1 &
+          echo $! > /tmp/lead-machine.pid
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            if curl --silent --show-error --fail --max-time 5 http://127.0.0.1:3000/api/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/lead-machine-dev.log
+          exit 1
+      - name: Run browser E2E
+        run: bun scripts/browser-e2e.mjs
+      - name: Server log on failure
+        if: failure()
+        run: cat /tmp/lead-machine-dev.log
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lead-machine-browser-e2e
+          path: artifacts/browser-e2e
+          if-no-files-found: warn
