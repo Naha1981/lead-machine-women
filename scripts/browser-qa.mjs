@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { chromium, request } from "playwright";
 import { mkdir } from "node:fs/promises";
 
 const base = process.env.BASE_URL || "http://127.0.0.1:3000";
@@ -16,7 +16,7 @@ function recordFailure(name, message) {
 
 async function waitStable(page) {
   await page.waitForLoadState("domcontentloaded");
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1200);
 }
 
 async function assertNoHorizontalOverflow(page, name) {
@@ -115,11 +115,13 @@ await testPage(browser, "/s/qa-nonexistent-slug", [
 
 // Widget endpoint should return JavaScript usable cross-origin.
 {
-  const response = await browser.request.get(base + "/widget/qa-demo");
+  const api = await request.newContext();
+  const response = await api.get(base + "/widget/qa-demo");
   const body = await response.text();
   if (response.status() !== 200) recordFailure("/widget/[slug]", `Expected HTTP 200, got ${response.status()}`);
   if (!body.includes("Make an enquiry")) recordFailure("/widget/[slug]", "Widget script missing CTA");
   if (!body.includes("/go/qa-demo")) recordFailure("/widget/[slug]", "Widget script missing destination");
+  await api.dispose();
 }
 
 // Liveness endpoint.
