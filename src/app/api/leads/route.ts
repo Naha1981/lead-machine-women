@@ -209,7 +209,7 @@ export async function GET(req: Request) {
       whatsappSent: l.whatsappSent,
       ownerNotified: l.ownerNotified,
       consentGiven: l.consentGiven,
-      optedOutAt: l.optedOutAt?.toISOString() ?? null, l.consentGiven,
+      optedOutAt: l.optedOutAt?.toISOString() ?? null,
       createdAt: l.createdAt.toISOString(),
       updatedAt: l.updatedAt.toISOString(),
     }));
