@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { appId, operatorConfigured, sendText, verifyWebhookSignature } from "@/lib/integrations/whatsapp-operator/client";
+import { appId, operatorConfigured, verifyWebhookSignature } from "@/lib/integrations/whatsapp-operator/client";
 import { createLead, findLeadByPhone, optOutLead, updateLeadStatus } from "@/modules/leads/service";
 import { createMessage } from "@/modules/whatsapp/service";
 import { getOrgByWhatsAppAccountId } from "@/modules/orgs/service";
