@@ -11,7 +11,8 @@ export default function DentistDemoPage() {
     e.preventDefault();
     setLoading(true);
     setStatus("");
-    const form = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
     const body = {
       name: String(form.get("name") || ""),
       phone: String(form.get("phone") || ""),
@@ -30,7 +31,7 @@ export default function DentistDemoPage() {
       if (!res.ok) throw new Error(data?.error ?? "Demo failed");
       setSent(true);
       setStatus(`Demo lead captured. Lead ID: ${data.leadId}`);
-      e.currentTarget.reset();
+      formElement.reset();
     } catch (error: any) {
       setStatus(error?.message ?? "Demo failed");
     } finally {
