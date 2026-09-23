@@ -50,13 +50,27 @@ export async function POST(req: Request) {
       consentGiven: true,
     });
 
-    const notification = await sendLeadNotifications({
-      id: org.id,
-      name: org.name,
-      whatsappNumber: org.whatsappNumber,
-      whatsappAccountId: org.whatsappAccountId,
-      ownerPhone: org.ownerPhone,
-    }, lead);
+    const notification = await sendLeadNotifications(
+      {
+        id: org.id,
+        name: org.name,
+        whatsappNumber: org.whatsappNumber,
+        whatsappAccountId: org.whatsappAccountId,
+        ownerPhone: org.ownerPhone,
+      },
+      {
+        id: lead.id,
+        name: lead.name,
+        phone: lead.phone,
+        serviceNeeded: lead.serviceNeeded,
+        aiScore: lead.aiScore,
+        aiTemperature:
+          lead.aiTemperature === "hot" || lead.aiTemperature === "warm" || lead.aiTemperature === "cold"
+            ? lead.aiTemperature
+            : null,
+        aiReason: lead.aiReason,
+      }
+    );
 
     await updateLeadFlags(lead.id, {
       whatsappSent: notification.prospectSent,
