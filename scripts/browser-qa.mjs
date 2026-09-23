@@ -164,11 +164,18 @@ await testPage(browser, "/s/qa-nonexistent-slug", [
   await page.getByPlaceholder("+27 82 123 4567").fill("+27 82 555 0177");
   await page.getByPlaceholder("Email address").fill("browser.qa@example.com");
   await page.getByPlaceholder("Tell us briefly what you would like help with").fill("Dental implant consultation");
+  const leadResponsePromise = page.waitForResponse(
+    (response) => response.url().includes("/api/demo/dentist/lead") && response.request().method() === "POST"
+  );
   await page.getByRole("button", { name: "Request consultation" }).click();
-  await page.getByText(/Demo lead captured. Lead ID:/).waitFor({ timeout: 15000 });
+  const leadResponse = await leadResponsePromise;
+  if (leadResponse.status() !== 200) {
+    recordFailure("success-stage", `Lead API returned HTTP ${leadResponse.status()}`);
+  }
+  await page.waitForTimeout(700);
 
   const body = await page.locator("body").innerText();
-  if (!body.includes("Demo lead captured. Lead ID:")) recordFailure("success-stage", "Lead success status not shown");
+  if (!body.includes("Demo lead captured. Lead ID:")) recordFailure("success-stage", "Lead success status not shown after 200 response");
   await assertNoHorizontalOverflow(page, "success-stage mobile");
   await capture(page, "success-stage-mobile");
 
