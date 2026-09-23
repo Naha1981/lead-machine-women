@@ -19,7 +19,7 @@ type LeadInput = {
 
 function renderMessage(template: string, lead: LeadInput) {
   return template
-    .replaceAll("{{firstName}}", lead.name.split(/s+/)[0] || lead.name)
+    .replaceAll("{{firstName}}", lead.name.trim().split(/\s+/)[0] || lead.name)
     .replaceAll("{{service}}", lead.serviceNeeded || "your enquiry");
 }
 
