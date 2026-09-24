@@ -50,16 +50,19 @@ async function createPgliteClient(): Promise<DbClient> {
       const { drizzle } = await import("drizzle-orm/pglite");
       const path = await import("node:path");
       const fs = await import("node:fs");
-      // Ensure dbDir is a plain string — process.cwd() can return a URL-like
-      // object in some Next.js Turbopack RSC contexts, which breaks PGlite.
+      // Always give PGlite an explicit filesystem path. In GitHub Actions,
+      // zero-argument PGlite can resolve its default data directory through
+      // URL semantics that Node rejects inside Next.js server contexts.
       const cwd = String(process.cwd());
-      const dbDir = String(path.join(cwd, "db", "pglite"));
+      const dbDir = process.env.CI === "true"
+        ? "/tmp/lead-machine-pglite"
+        : String(path.join(cwd, "db", "pglite"));
       try {
         fs.mkdirSync(dbDir, { recursive: true });
       } catch {
         /* ignore */
       }
-      const pg = process.env.CI === "true" ? new PGlite() : new PGlite(dbDir);
+      const pg = new PGlite(dbDir);
       const db = drizzle(pg, { schema: schema.schema });
       // Auto-create tables from the schema on first dev boot.
       await ensureSchema(pg);
