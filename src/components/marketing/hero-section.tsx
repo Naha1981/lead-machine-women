@@ -86,10 +86,10 @@ export default function HeroSection() {
               asChild
               className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
             >
-              <a href="#how-it-works">
+              <Link href="/demo/dentist">
                 <Play className="size-4" />
                 Watch Demo
-              </a>
+              </Link>
             </Button>
           </div>
 
