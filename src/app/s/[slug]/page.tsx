@@ -40,6 +40,23 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 // Fetch published site data. PRIMARY: direct service call. FALLBACK: internal
 // API fetch (for dev PGlite-in-RSC compatibility).
 async function fetchPublishedSite(slug: string) {
+  // In local/CI RSC, avoid PGlite's Node worker path and use the public API.
+  // Production with Neon keeps the direct server-side service call.
+  if (!process.env.DATABASE_URL && process.env.NODE_ENV !== "production") {
+    const base =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      `http://localhost:${process.env.PORT || 3000}`;
+    try {
+      const res = await fetch(`${base}/api/website/public?slug=${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
   // PRIMARY: direct server-side service call (works in production with Neon)
   try {
     return await getPublishedWebsiteBySlug(slug);

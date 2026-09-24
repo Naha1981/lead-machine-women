@@ -73,6 +73,14 @@ await run("landing desktop renders", async () => {
   await desktop.locator("#how-it-works").waitFor();
   await desktop.locator("#pricing").waitFor();
   await desktop.locator("#faq").waitFor();
+  await desktop.locator("#how-it-works").scrollIntoViewIfNeeded();
+  await assertText(desktop, "From zero to leads in three steps", "how it works visible");
+  await desktop.locator("#features").scrollIntoViewIfNeeded();
+  await assertText(desktop, "A full lead machine — not just a website", "features visible");
+  await desktop.locator("#pricing").scrollIntoViewIfNeeded();
+  await assertText(desktop, "Simple pricing in Rand", "pricing visible");
+  await desktop.locator("#faq").scrollIntoViewIfNeeded();
+  await assertText(desktop, "Questions, answered", "faq visible");
   await assertNoOverflow(desktop, "landing desktop");
   await screenshot(desktop, "01-landing-desktop");
 });
@@ -114,6 +122,14 @@ await run("signup route is built", async () => {
   await assertNoOverflow(mobile, "signup mobile");
 });
 
+await run("landing desktop primary CTAs point to live routes", async () => {
+  await go(desktop, "/");
+  const trial = desktop.getByRole("link", { name: /Start Free Trial/i }).first();
+  const demo = desktop.getByRole("link", { name: /Watch Demo/i }).first();
+  if (await trial.getAttribute("href") !== "/signup") throw new Error("Start Free Trial href mismatch");
+  if (await demo.getAttribute("href") !== "/demo/dentist") throw new Error("Watch Demo should open the working demo");
+});
+
 await run("demo dentist full lead success journey", async () => {
   const res = await go(desktop, "/demo/dentist");
   if (!res || res.status() !== 200) throw new Error("HTTP " + (res?.status()));
@@ -129,6 +145,21 @@ await run("demo dentist full lead success journey", async () => {
   await screenshot(desktop, "05-demo-success");
 });
 
+await run("demo dentist mobile journey and responsiveness", async () => {
+  const res = await go(mobile, "/demo/dentist");
+  if (!res || res.status() !== 200) throw new Error("HTTP " + (res?.status()));
+  await assertText(mobile, "Sandton Smile Dental", "demo identity mobile");
+  await mobile.locator('input[name="name"]').fill("Mobile Test Patient");
+  await mobile.locator('input[name="phone"]').fill("+27825550200");
+  await mobile.locator('input[name="email"]').fill("mobile-test@example.com");
+  await mobile.locator('select[name="serviceNeeded"]').selectOption({ label: "Cosmetic dentistry" });
+  await mobile.locator('textarea[name="message"]').fill("Mobile conversion test.");
+  await mobile.getByRole("button", { name: "Request consultation" }).click();
+  await assertText(mobile, "Demo lead captured. Lead ID:", "mobile demo success");
+  await assertNoOverflow(mobile, "demo dentist mobile");
+  await screenshot(mobile, "07-demo-mobile-success");
+});
+
 await run("revenue leak audit journey", async () => {
   const res = await go(desktop, "/audit");
   if (!res || res.status() !== 200) throw new Error("HTTP " + (res?.status()));
@@ -142,6 +173,17 @@ await run("revenue leak audit journey", async () => {
   await go(mobile, "/audit");
   await assertNoOverflow(mobile, "audit mobile");
   await screenshot(desktop, "06-audit-results");
+});
+
+await run("audit mobile result state", async () => {
+  const res = await go(mobile, "/audit");
+  if (!res || res.status() !== 200) throw new Error("HTTP " + (res?.status()));
+  await mobile.locator('input[placeholder*="yourbusiness"]').fill("https://example.com");
+  await mobile.getByRole("button", { name: "Run free audit" }).click();
+  await assertText(mobile, "Here is what we found.", "audit mobile result");
+  await assertText(mobile, "Fix these first.", "audit mobile findings");
+  await assertNoOverflow(mobile, "audit mobile results");
+  await screenshot(mobile, "08-audit-mobile-results");
 });
 
 await run("public website API returns not found for unknown slug", async () => {
@@ -161,6 +203,15 @@ await run("database-backed public routes are environment gated", async () => {
   if (!g || g.status() !== 404) throw new Error("/go unknown slug expected 404, got " + (g?.status()));
 });
 
+await run("standalone public route fallback", async () => {
+  const s = await go(desktop, "/s/browser-test-no-site");
+  if (!s || s.status() !== 200) throw new Error("/s fallback expected 200, got " + (s?.status()));
+  await assertText(desktop, "This site isn't live yet", "public site fallback");
+  await assertNoOverflow(desktop, "public site fallback");
+  const g = await go(desktop, "/go/browser-test-no-site");
+  if (!g || g.status() !== 404) throw new Error("/go unknown slug expected 404, got " + (g?.status()));
+});
+
 await run("widget endpoint returns embeddable script", async () => {
   const res = await desktop.request.get(base + "/widget/sandton-smile-dental");
   if (!res.ok()) throw new Error("HTTP " + res.status());
@@ -169,6 +220,16 @@ await run("widget endpoint returns embeddable script", async () => {
   const body = await res.text();
   if (!body.includes("Make an enquiry") || !body.includes("/go/sandton-smile-dental")) {
     throw new Error("Widget script contract missing");
+  }
+});
+
+await run("selftest endpoint returns safe health contract", async () => {
+  const res = await desktop.request.get(base + "/api/v1/selftest");
+  if (!res.ok()) throw new Error("HTTP " + res.status());
+  const body = await res.json();
+  if (typeof body.ok !== "boolean" || !body.checks) throw new Error("invalid selftest contract");
+  if ("DATABASE_URL" in body || "CLERK_SECRET_KEY" in body || "GROQ_API_KEY" in body) {
+    throw new Error("selftest leaked environment secret");
   }
 });
 

@@ -72,7 +72,7 @@ export default function LandingHeader() {
         {/* Mobile menu */}
         <div className="md:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
+            <SheetTrigger asChild aria-controls="mobile-navigation-sheet">
               <Button
                 variant="ghost"
                 size="icon"
@@ -82,7 +82,7 @@ export default function LandingHeader() {
                 <Menu className="size-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
+            <SheetContent id="mobile-navigation-sheet" side="right" className="w-72">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
                   <span className="flex size-7 items-center justify-center rounded-md bg-emerald-600 text-white">
