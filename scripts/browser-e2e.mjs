@@ -75,6 +75,23 @@ await run("landing desktop renders", async () => {
   await desktop.locator("#faq").waitFor();
   await assertNoOverflow(desktop, "landing desktop");
   await screenshot(desktop, "01-landing-desktop");
+
+  for (const section of ["#features", "#pricing", "#testimonials", "#faq"]) {
+    const locator = desktop.locator(section);
+    await locator.scrollIntoViewIfNeeded();
+    await desktop.waitForTimeout(500);
+    if (!(await locator.isVisible())) throw new Error("landing section not visible: " + section);
+    const text = (await locator.innerText()).trim();
+    if (text.length < 80) throw new Error("landing section appears empty: " + section);
+  }
+  await desktop.getByRole("button").filter({ hasText: /Questions, answered/i }).count().catch(() => {});
+  const faqTrigger = desktop.locator("#faq button").first();
+  await faqTrigger.scrollIntoViewIfNeeded();
+  await faqTrigger.click();
+  await desktop.waitForTimeout(250);
+  const faqText = (await desktop.locator("#faq").innerText()).trim();
+  if (faqText.length < 300) throw new Error("FAQ interaction did not expand content");
+  await screenshot(desktop, "01b-landing-scrolled-sections");
 });
 
 await run("landing mobile navigation and responsiveness", async () => {
