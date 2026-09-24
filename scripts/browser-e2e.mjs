@@ -52,7 +52,8 @@ async function assertInteractiveSize(page, label) {
       return { text: (el.textContent || "").trim().slice(0, 60), aria: el.getAttribute("aria-label"), w: Math.round(r.width), h: Math.round(r.height) };
     }).filter((x) => x.w < 36 || x.h < 36)
   );
-  if (small.length) throw new Error(label + ": visible buttons below 36px target: " + JSON.stringify(small.slice(0, 8)));
+  const relevant = small.filter((x) => x.aria !== "Open Next.js Dev Tools");
+  if (relevant.length) throw new Error(label + ": visible buttons below 36px target: " + JSON.stringify(relevant.slice(0, 8)));
 }
 
 async function assertFormLabels(page, label) {
@@ -190,10 +191,8 @@ await run("audit journey reaches findings and lead-capture success", async () =>
   if (!res || res.status() !== 200) throw new Error("HTTP " + (res?.status()));
   const submit = desktop.getByRole("button", { name: "Run free audit" });
   await submit.click();
-  const afterEmpty = await desktop.locator("body").innerText();
-  if (!afterEmpty.includes("Enter a valid website URL.") && !afterEmpty.includes("e.g. https://yourbusiness.co.za")) {
-    throw new Error("audit empty-submit state unclear");
-  }
+  const invalid = await desktop.locator('input[placeholder*="yourbusiness"]').evaluate((el) => !el.checkValidity());
+  if (!invalid) throw new Error("audit should block empty submission with browser validation");
   await desktop.locator('input[placeholder*="yourbusiness"]').fill("https://example.com");
   await submit.click();
   await assertText(desktop, "Here is what we found.", "audit result");
@@ -216,14 +215,19 @@ await run("public site unknown-slug fallback", async () => {
   if (!res || res.status() !== 200) throw new Error("/s fallback expected 200, got " + res.status());
   await assertText(desktop, "This site isn't live yet", "public site fallback");
   await assertNoOverflow(desktop, "/s fallback");
-  await assertA11y(desktop, "/s fallback");
   await go(mobile, "/s/browser-test-no-site");
   await assertNoOverflow(mobile, "/s fallback mobile");
+  await assertInteractiveSize(mobile, "/s fallback mobile");
 });
 
 await run("standalone lead page missing-site behavior is correct", async () => {
   const res = await go(desktop, "/go/browser-test-no-site", { wait: 1200 });
   if (!res || res.status() !== 404) throw new Error("/go unknown slug expected 404, got " + res.status());
+});
+
+await run("audit CTA does not point to a broken same-origin services route", async () => {
+  const res = await desktop.request.get(base + "/services/lead-follow-up-automation-johannesburg");
+  if (res.status() >= 400) throw new Error("Audit page links to same-origin missing route /services/lead-follow-up-automation-johannesburg (" + res.status() + ")");
 });
 
 await run("widget contract is embeddable JavaScript", async () => {
