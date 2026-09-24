@@ -68,10 +68,18 @@ export default function FaqSection() {
                 value={`item-${i}`}
                 className="border-slate-200"
               >
-                <AccordionTrigger className="text-left text-base font-semibold text-slate-900 hover:text-emerald-700 hover:no-underline">
+                <AccordionTrigger
+                  id={`faq-trigger-${i}`}
+                  aria-controls={`faq-content-${i}`}
+                  className="text-left text-base font-semibold text-slate-900 hover:text-emerald-700 hover:no-underline"
+                >
                   {f.q}
                 </AccordionTrigger>
-                <AccordionContent className="text-base leading-relaxed text-slate-600">
+                <AccordionContent
+                  id={`faq-content-${i}`}
+                  aria-labelledby={`faq-trigger-${i}`}
+                  className="text-base leading-relaxed text-slate-600"
+                >
                   {f.a}
                 </AccordionContent>
               </AccordionItem>
