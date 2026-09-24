@@ -119,7 +119,7 @@ await run("landing desktop primary CTAs point to live routes", async () => {
   const trial = desktop.getByRole("link", { name: /Start Free Trial/i }).first();
   const demo = desktop.getByRole("link", { name: /Watch Demo/i }).first();
   if (await trial.getAttribute("href") !== "/signup") throw new Error("Start Free Trial href mismatch");
-  if (await demo.getAttribute("href") !== "/demo/dentist") throw new Error("Watch Demo href mismatch");
+  if (await demo.getAttribute("href") !== "/demo/dentist") throw new Error("Watch Demo should open the working demo");
 });
 
 await run("demo dentist full lead success journey", async () => {
