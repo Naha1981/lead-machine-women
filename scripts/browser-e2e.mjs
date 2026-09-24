@@ -88,7 +88,7 @@ await run("landing desktop renders", async () => {
   await faqTrigger.scrollIntoViewIfNeeded();
   await faqTrigger.click();
   await desktop.waitForTimeout(300);
-  await visibleText(desktop, "Most clients see their first lead within 48 hours of publishing.");
+  await desktop.getByText("Most clients see their first lead within 48 hours of publishing.", { exact: false }).first().waitFor({ state: "visible", timeout: 15000 });
   await screenshot(desktop, "01b-landing-scrolled-sections");
 });
 
