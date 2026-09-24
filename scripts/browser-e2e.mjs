@@ -73,6 +73,14 @@ await run("landing desktop renders", async () => {
   await desktop.locator("#how-it-works").waitFor();
   await desktop.locator("#pricing").waitFor();
   await desktop.locator("#faq").waitFor();
+  await desktop.locator("#how-it-works").scrollIntoViewIfNeeded();
+  await assertText(desktop, "From zero to leads in three steps", "how it works visible");
+  await desktop.locator("#features").scrollIntoViewIfNeeded();
+  await assertText(desktop, "A full lead machine — not just a website", "features visible");
+  await desktop.locator("#pricing").scrollIntoViewIfNeeded();
+  await assertText(desktop, "Simple pricing in Rand", "pricing visible");
+  await desktop.locator("#faq").scrollIntoViewIfNeeded();
+  await assertText(desktop, "Questions, answered", "faq visible");
   await assertNoOverflow(desktop, "landing desktop");
   await screenshot(desktop, "01-landing-desktop");
 });
