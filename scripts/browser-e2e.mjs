@@ -84,13 +84,11 @@ await run("landing desktop renders", async () => {
     const text = (await locator.innerText()).trim();
     if (text.length < 80) throw new Error("landing section appears empty: " + section);
   }
-  await desktop.getByRole("button").filter({ hasText: /Questions, answered/i }).count().catch(() => {});
-  const faqTrigger = desktop.locator("#faq button").first();
+  const faqTrigger = desktop.getByRole("button", { name: "How fast will I get leads?" });
   await faqTrigger.scrollIntoViewIfNeeded();
   await faqTrigger.click();
-  await desktop.waitForTimeout(250);
-  const faqText = (await desktop.locator("#faq").innerText()).trim();
-  if (faqText.length < 300) throw new Error("FAQ interaction did not expand content");
+  await desktop.waitForTimeout(300);
+  await visibleText(desktop, "Most clients see their first lead within 48 hours of publishing.");
   await screenshot(desktop, "01b-landing-scrolled-sections");
 });
 
