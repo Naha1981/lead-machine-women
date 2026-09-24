@@ -19,8 +19,6 @@ jobs:
       SIMULATE_WHATSAPP: "true"
       CRON_SECRET: smoke-secret
       ARTIFACT_DIR: artifacts/full-e2e
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5hY2NvdW50cy5kZXYk
-      CLERK_SECRET_KEY: sk_test_demo_only_not_for_real_auth
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
