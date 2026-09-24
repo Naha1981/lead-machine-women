@@ -7,9 +7,12 @@ const artifacts = process.env.ARTIFACT_DIR || "artifacts/browser-e2e";
 await mkdir(artifacts, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
-const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
-const tablet = await browser.newPage({ viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1 });
-const mobile = await browser.newPage({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 1 });
+const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+const tabletContext = await browser.newContext({ viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1 });
+const mobileContext = await browser.newContext({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 1 });
+const desktop = await desktopContext.newPage();
+const tablet = await tabletContext.newPage();
+const mobile = await mobileContext.newPage();
 
 const failures = [];
 const warnings = [];
@@ -282,6 +285,9 @@ await writeFile(
   JSON.stringify({ failures, warnings, consoleErrors, pageErrors, failedRequests }, null, 2)
 );
 
+await desktopContext.close();
+await tabletContext.close();
+await mobileContext.close();
 await browser.close();
 
 console.log(JSON.stringify({
