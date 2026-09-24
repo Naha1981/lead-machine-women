@@ -34,7 +34,7 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - name: Install Playwright for CI
-        run: bun add --no-save playwright
+        run: bun add --no-save playwright @axe-core/playwright
       - name: Install Chromium
         run: bunx playwright install --with-deps chromium
       - name: Start development server
