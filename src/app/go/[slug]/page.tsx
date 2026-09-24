@@ -8,8 +8,28 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }> };
 
+async function fetchPublishedSite(slug: string) {
+  try {
+    return await getPublishedWebsiteBySlug(slug);
+  } catch (directError) {
+    console.warn("[/go/[slug]] direct service call failed, falling back to API:", (directError as Error)?.message);
+    try {
+      const base = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+      const res = await fetch(
+        `${base}/api/website/public?slug=${encodeURIComponent(slug)}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (fetchError) {
+      console.error("[/go/[slug]] API fallback also failed:", (fetchError as Error)?.message);
+      return null;
+    }
+  }
+}
+
 async function loadSite(slug: string) {
-  const view = await getPublishedWebsiteBySlug(slug);
+  const view = await fetchPublishedSite(slug);
   if (!view) notFound();
   return {
     org: view.org as PublicOrg,
