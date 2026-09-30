@@ -168,9 +168,9 @@ await run("published business page and quote form submission", async () => {
   if (!res || res.status() !== 200) throw new Error("Public business page HTTP " + (res?.status()));
   await assertText(desktop, "Sandton Smile Dental", "published business page");
 
-  await desktop.locator('input[name="name"]').fill("Quote Form Patient");
-  await desktop.locator('input[name="phone"]').fill("+27825550301");
-  await desktop.locator('input[name="email"]').fill("quote-test@example.com");
+  await desktop.locator("#lf-name").fill("Quote Form Patient");
+  await desktop.locator("#lf-phone").fill("+27825550301");
+  await desktop.locator("#lf-email").fill("quote-test@example.com");
   await desktop.locator('input[id="lf-service"]').fill("Emergency dental care");
   await desktop.locator('textarea[id="lf-message"]').fill("I need an urgent appointment and would like a quote for treatment.");
   await desktop.getByRole("checkbox").click();
