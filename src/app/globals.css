@@ -120,3 +120,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+@layer utilities {
+  .dark .bg-white { background-color: var(--card) !important; }
+  .dark .bg-slate-50 { background-color: oklch(0.205 0 0) !important; }
+  .dark .bg-slate-100 { background-color: oklch(0.269 0 0) !important; }
+  .dark .bg-slate-200 { background-color: oklch(0.32 0 0) !important; }
+  .dark .text-slate-900 { color: var(--foreground) !important; }
+  .dark .text-slate-800 { color: oklch(0.94 0 0) !important; }
+  .dark .text-slate-700 { color: oklch(0.84 0 0) !important; }
+  .dark .text-slate-600 { color: oklch(0.74 0 0) !important; }
+  .dark .text-slate-500 { color: oklch(0.66 0 0) !important; }
+  .dark .text-slate-400 { color: var(--muted-foreground) !important; }
+  .dark .border-slate-100 { border-color: var(--border) !important; }
+  .dark .border-slate-200 { border-color: var(--border) !important; }
+  .dark .border-slate-300 { border-color: oklch(1 0 0 / 18%) !important; }
+  .dark .from-emerald-50 { --tw-gradient-from: oklch(0.19 0.04 165) !important; }
+  .dark .from-white { --tw-gradient-from: var(--background) !important; }
+  .dark .via-white { --tw-gradient-via: var(--background) !important; }
+  .dark .to-white { --tw-gradient-to: var(--background) !important; }
+}
