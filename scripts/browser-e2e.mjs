@@ -173,7 +173,7 @@ await run("published business page and quote form submission", async () => {
   await desktop.locator('input[name="email"]').fill("quote-test@example.com");
   await desktop.locator('input[id="lf-service"]').fill("Emergency dental care");
   await desktop.locator('textarea[id="lf-message"]').fill("I need an urgent appointment and would like a quote for treatment.");
-  await desktop.locator('button[id="lf-consent"]').check();
+  await desktop.getByRole("checkbox").click();
 
   const quoteResponse = desktop.waitForResponse(
     (response) => response.url().includes("/api/leads") && response.request().method() === "POST"
