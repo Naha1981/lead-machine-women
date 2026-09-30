@@ -6,6 +6,7 @@ import { getOrgByWhatsAppAccountId } from "@/modules/orgs/service";
 import { cancelLeadFollowUps } from "@/modules/followups/service";
 import { emitEvent } from "@/modules/events/service";
 import { qualifyLead } from "@/lib/ai";
+import { sendInboundAutoReply } from "@/modules/whatsapp/auto-reply";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +107,9 @@ export async function POST(req: Request) {
       status: "received",
     });
 
+    let autoReplySent = false;
+    let autoReplySimulated = false;
+
     if (lead) {
       if (isOptOut(text)) {
         await optOutLead(lead.id, org.id);
@@ -113,6 +117,18 @@ export async function POST(req: Request) {
       } else if (!["won", "lost"].includes(lead.status)) {
         await updateLeadStatus(lead.id, org.id, "contacted");
         await cancelLeadFollowUps(lead.id, org.id);
+      }
+
+      try {
+        const reply = await sendInboundAutoReply({
+          org,
+          lead,
+          inboundText: text || "[non-text WhatsApp message]",
+        });
+        autoReplySent = reply.sent;
+        autoReplySimulated = reply.simulated;
+      } catch (error) {
+        console.error("[whatsapp auto-reply]", error);
       }
     }
 
@@ -124,7 +140,12 @@ export async function POST(req: Request) {
 
     // Do not send an unsolicited AI reply by default. The inbound message is
     // captured, associated with the lead, and removes scheduled follow-ups.
-    return NextResponse.json({ ok: true, leadId: lead?.id ?? null });
+    return NextResponse.json({
+      ok: true,
+      leadId: lead?.id ?? null,
+      autoReplySent,
+      autoReplySimulated,
+    });
   } catch (e: any) {
     console.error("[whatsapp webhook]", e?.message ?? e);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
