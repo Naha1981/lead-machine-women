@@ -82,7 +82,22 @@ async function deliverAlert(org: typeof organizations.$inferSelect, lead: typeof
   let whatsapp = false;
   let sms = false;
 
-  if (operatorConfigured() && org.whatsappAccountId) {
+  if (process.env.SIMULATE_WHATSAPP === "true") {
+    whatsapp = true;
+    try {
+      await createMessage({
+        orgId: org.id,
+        leadId: lead.id,
+        direction: "outbound",
+        phoneNumber: ownerPhone,
+        content: text,
+        messageType: "leakage-alert",
+        status: "simulated",
+      });
+    } catch (error) {
+      console.error("[leakage] simulation log failed", error);
+    }
+  } else if (operatorConfigured() && org.whatsappAccountId) {
     try {
       const result = await sendText({
         waAccountId: org.whatsappAccountId,
@@ -91,15 +106,19 @@ async function deliverAlert(org: typeof organizations.$inferSelect, lead: typeof
         text,
       });
       whatsapp = result.ok !== false;
-      await createMessage({
-        orgId: org.id,
-        leadId: lead.id,
-        direction: "outbound",
-        phoneNumber: ownerPhone,
-        content: text,
-        messageType: "leakage-alert",
-        status: whatsapp ? "sent" : "failed",
-      });
+      try {
+        await createMessage({
+          orgId: org.id,
+          leadId: lead.id,
+          direction: "outbound",
+          phoneNumber: ownerPhone,
+          content: text,
+          messageType: "leakage-alert",
+          status: whatsapp ? "sent" : "failed",
+        });
+      } catch (error) {
+        console.error("[leakage] WhatsApp message log failed", error);
+      }
     } catch (error) {
       console.error("[leakage] WhatsApp delivery failed", error);
       try {
@@ -114,17 +133,6 @@ async function deliverAlert(org: typeof organizations.$inferSelect, lead: typeof
         });
       } catch {}
     }
-  } else if (process.env.SIMULATE_WHATSAPP === "true") {
-    whatsapp = true;
-    await createMessage({
-      orgId: org.id,
-      leadId: lead.id,
-      direction: "outbound",
-      phoneNumber: ownerPhone,
-      content: text,
-      messageType: "leakage-alert",
-      status: "simulated",
-    });
   }
 
   const smsResult = await sendSmsAlert({ to: ownerPhone, text, orgId: org.id });
