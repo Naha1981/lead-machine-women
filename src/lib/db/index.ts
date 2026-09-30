@@ -136,12 +136,15 @@ async function ensureSchema(pg: any): Promise<void> {
       "owner_notified" boolean NOT NULL DEFAULT false,
       "consent_given" boolean NOT NULL DEFAULT false,
       "opted_out_at" timestamptz,
+      "hot_lead_alerted_at" timestamptz,
       "created_at" timestamptz NOT NULL DEFAULT now(),
       "updated_at" timestamptz NOT NULL DEFAULT now()
     )`,
     `CREATE INDEX IF NOT EXISTS "leads_org_id_idx" ON "leads" ("org_id")`,
     `CREATE INDEX IF NOT EXISTS "leads_org_id_status_idx" ON "leads" ("org_id", "status")`,
     `CREATE INDEX IF NOT EXISTS "leads_org_id_temp_idx" ON "leads" ("org_id", "ai_temperature")`,
+    `ALTER TABLE "leads" ADD COLUMN IF NOT EXISTS "hot_lead_alerted_at" timestamptz`,
+    `CREATE INDEX IF NOT EXISTS "leads_hot_leakage_idx" ON "leads" ("org_id", "ai_temperature", "status", "created_at")`,
     `CREATE TABLE IF NOT EXISTS "websites" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       "org_id" uuid NOT NULL UNIQUE REFERENCES "organizations"("id") ON DELETE cascade,
