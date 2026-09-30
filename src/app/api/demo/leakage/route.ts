@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ensureDemoDentistOrg } from "@/modules/demo/service";
 import { createLead } from "@/modules/leads/service";
+import { updateOrg } from "@/modules/orgs/service";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,11 @@ export async function POST(req: Request) {
   if (!authorized(req)) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const org = await ensureDemoDentistOrg();
+  await updateOrg(org.id, {
+    whatsappAccountId: "demo-e2e-account",
+    whatsappConnected: false,
+  });
+
   const lead = await createLead({
     orgId: org.id,
     name: "Leakage Test Lead",
