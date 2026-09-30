@@ -148,6 +148,10 @@ await run("demo dentist full lead success journey", async () => {
   if (!["hot", "warm", "cold"].includes(scoringPayload.temperature)) {
     throw new Error("Lead was created without a valid temperature");
   }
+
+  // Inbox contract: the created lead must carry the same score/temperature
+  // fields that the dashboard inbox renders.
+  if (!scoringPayload.leadId) throw new Error("Scored lead has no leadId");
   await assertText(desktop, "Demo lead captured. Lead ID:", "demo success");
   await assertNoOverflow(desktop, "demo dentist");
   await screenshot(desktop, "05-demo-success");
@@ -175,7 +179,7 @@ await run("published business page and quote form submission", async () => {
   await desktop.locator('textarea[id="lf-message"]').fill("I need an urgent appointment and would like a quote for treatment.");
   await desktop.getByRole("checkbox").click();
 
-  await desktop.getByRole("button", { name: /Request consultation/i }).click();
+  await desktop.locator("#contact").getByRole("button", { name: "Request consultation" }).click();
   // The success state is rendered only after the browser has submitted the
   // form to /api/leads and received a successful response, so this is the
   // stable end-to-end assertion rather than a transport-level race.
