@@ -16,6 +16,8 @@ export type EventType =
   | "lead.status_changed"
   | "lead.followups_scheduled"
   | "lead.followup_sent"
+  | "lead.leakage_alert_sent"
+  | "lead.leakage_alert_failed"
   | "whatsapp.received"
   | "lead.opted_out"
   | "whatsapp.sent"
