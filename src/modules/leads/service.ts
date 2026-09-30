@@ -32,6 +32,7 @@ export async function createLead(opts: {
   whatsappSent?: boolean;
   ownerNotified?: boolean;
   optedOutAt?: Date | null;
+  createdAt?: Date;
 }): Promise<LeadRow> {
   const db = await getDb();
   const rows = await db
@@ -52,6 +53,7 @@ export async function createLead(opts: {
       whatsappSent: opts.whatsappSent ?? false,
       ownerNotified: opts.ownerNotified ?? false,
       optedOutAt: opts.optedOutAt ?? null,
+      createdAt: opts.createdAt ?? new Date(),
     })
     .returning();
   const lead = rows[0];
