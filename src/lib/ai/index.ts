@@ -16,6 +16,7 @@ import {
   type LeadQualification,
 } from "@/lib/ai/schemas";
 import type { WebsiteFaq } from "@/types";
+import { fallbackLeadQualification, getVerticalPack } from "@/lib/vertical-packs";
 
 export type { GeneratedWebsiteContent, LeadQualification };
 export { AINotConfiguredError };
@@ -57,35 +58,54 @@ export async function qualifyLead(opts: {
   serviceNeeded?: string;
   message?: string;
 }): Promise<LeadQualification> {
-  const model = getModel();
+  const pack = getVerticalPack(opts.industry);
 
-  const system = `You are an expert lead-qualification AI for South African SMEs. You score inbound leads based on intent, urgency, budget signals, and fit.`;
-  const prompt = `Qualify this lead for a South African business.
+  try {
+    const model = getModel();
+    const packQuestions = pack
+      ? pack.qualificationQuestions
+          .map((q) => "- " + q.label + ": " + q.prompt + (q.required ? " (required)" : ""))
+          .join("\n")
+      : "(no vertical pack selected)";
 
-Business: ${opts.businessName} (${opts.industry})
-Services offered: ${opts.services}
+    const system = "You are an expert lead-qualification AI for South African SMEs. You score inbound leads based on intent, urgency, budget signals, and fit.\n" +
+      "When a vertical intelligence pack is present, use its qualification requirements and urgency cues to interpret the enquiry. Do not invent answers to unanswered qualification questions.";
 
-Lead details:
-- Name: ${opts.leadName}
-- Phone: ${opts.phone}
-- Service needed: ${opts.serviceNeeded || "(not specified)"}
-- Message: ${opts.message || "(not specified)"}
+    const prompt = "Qualify this lead for a South African business.\n\n" +
+      "Business: " + opts.businessName + " (" + opts.industry + ")\n" +
+      "Services offered: " + opts.services + "\n\n" +
+      "Vertical intelligence pack: " + (pack?.label ?? "Generic") + "\n" +
+      "Recommended qualification questions:\n" + packQuestions + "\n\n" +
+      "Lead details:\n" +
+      "- Name: " + opts.leadName + "\n" +
+      "- Phone: " + opts.phone + "\n" +
+      "- Service needed: " + (opts.serviceNeeded || "(not specified)") + "\n" +
+      "- Message: " + (opts.message || "(not specified)") + "\n\n" +
+      "Scoring guide:\n" +
+      "- 8-10 (hot): clear urgent need, specific service requested, ready to act\n" +
+      "- 5-7 (warm): genuine interest, some detail, needs follow-up\n" +
+      "- 1-4 (cold): vague, spammy, or poor fit\n\n" +
+      "Score this lead and provide a reason + suggested next action.";
 
-Scoring guide:
-- 8-10 (hot): clear urgent need, specific service requested, ready to act
-- 5-7 (warm): genuine interest, some detail, needs follow-up
-- 1-4 (cold): vague, spammy, or poor fit
+    const { output } = await generateText({
+      model,
+      output: Output.object({ schema: leadQualificationSchema }),
+      system,
+      prompt,
+    });
 
-Score this lead and provide a reason + suggested next action.`;
-
-  const { output } = await generateText({
-    model,
-    output: Output.object({ schema: leadQualificationSchema }),
-    system,
-    prompt,
-  });
-
-  return output;
+    return output;
+  } catch (error) {
+    if (error instanceof AINotConfiguredError) {
+      return fallbackLeadQualification({
+        industry: opts.industry,
+        serviceNeeded: opts.serviceNeeded,
+        message: opts.message,
+        phone: opts.phone,
+      });
+    }
+    throw error;
+  }
 }
 
 export async function streamChatReply(opts: {
