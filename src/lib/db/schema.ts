@@ -101,6 +101,7 @@ export const leads = pgTable(
     ownerNotified: boolean("owner_notified").default(false).notNull(),
     consentGiven: boolean("consent_given").default(false).notNull(),
     optedOutAt: timestamp("opted_out_at", { withTimezone: true }),
+    hotLeadAlertedAt: timestamp("hot_lead_alerted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -108,6 +109,7 @@ export const leads = pgTable(
     orgIdx: index("leads_org_id_idx").on(t.orgId),
     orgStatusIdx: index("leads_org_id_status_idx").on(t.orgId, t.status),
     orgTempIdx: index("leads_org_id_temp_idx").on(t.orgId, t.aiTemperature),
+    hotLeakageIdx: index("leads_hot_leakage_idx").on(t.orgId, t.aiTemperature, t.status, t.createdAt),
   })
 );
 
