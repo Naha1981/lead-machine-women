@@ -210,6 +210,7 @@ export async function GET(req: Request) {
       ownerNotified: l.ownerNotified,
       consentGiven: l.consentGiven,
       optedOutAt: l.optedOutAt?.toISOString() ?? null,
+      hotLeadAlertedAt: l.hotLeadAlertedAt?.toISOString() ?? null,
       createdAt: l.createdAt.toISOString(),
       updatedAt: l.updatedAt.toISOString(),
     }));
