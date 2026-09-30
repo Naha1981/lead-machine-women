@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { mkdir, writeFile } from "node:fs/promises";
+import { createHmac } from "node:crypto";
 
 const base = process.env.BASE_URL || "http://127.0.0.1:3000";
 const artifacts = process.env.ARTIFACT_DIR || "artifacts/browser-e2e";
@@ -310,6 +311,59 @@ await run("widget endpoint returns embeddable script", async () => {
   const body = await res.text();
   if (!body.includes("Make an enquiry") || !body.includes("/go/sandton-smile-dental")) {
     throw new Error("Widget script contract missing");
+  }
+});
+
+await run("WhatsApp inbound auto-reply and hot-lead leakage flow", async () => {
+  const fixture = await desktop.request.post(base + "/api/demo/leakage", {
+    headers: { "X-Demo-Secret": "smoke-demo" },
+  });
+  if (fixture.status() !== 200) throw new Error("Leakage fixture failed: HTTP " + fixture.status());
+  const fixtureBody = await fixture.json();
+  if (!fixtureBody?.leadId || !fixtureBody?.orgId) throw new Error("Leakage fixture returned no lead/org ID");
+
+  const cron = await desktop.request.get(base + "/api/cron/lead-leakage", {
+    headers: { Authorization: "Bearer smoke-secret" },
+  });
+  if (!cron.ok()) throw new Error("Leakage cron failed: HTTP " + cron.status());
+  const cronBody = await cron.json();
+  const processed = (cronBody?.processed || []).find((item) => item.leadId === fixtureBody.leadId);
+  if (processed?.status !== "alerted") {
+    throw new Error("Hot lead older than 15 minutes was not alerted: " + JSON.stringify(cronBody));
+  }
+  if (processed?.whatsapp !== true) {
+    throw new Error("Leakage alert did not use the configured WhatsApp simulation path");
+  }
+
+  const payload = {
+    appId: "lead-machine",
+    waAccountId: "demo-e2e-account",
+    tenantId: fixtureBody.orgId,
+    message: {
+      key: {
+        id: "e2e-inbound-auto-reply",
+        fromMe: false,
+        remoteJid: "27825550555@s.whatsapp.net",
+      },
+      message: {
+        conversation: "Hi, I need an emergency dental appointment please.",
+      },
+    },
+  };
+  const raw = JSON.stringify(payload);
+  const signature = createHmac("sha256", "smoke-webhook").update(raw, "utf8").digest("hex");
+  const webhook = await desktop.request.post(base + "/api/webhooks/whatsapp", {
+    data: raw,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Webhook-Signature": signature,
+    },
+  });
+  if (!webhook.ok()) throw new Error("Inbound WhatsApp webhook failed: HTTP " + webhook.status());
+  const webhookBody = await webhook.json();
+  if (!webhookBody?.leadId) throw new Error("Inbound WhatsApp did not create/attach a lead");
+  if (webhookBody?.autoReplySent !== true || webhookBody?.autoReplySimulated !== true) {
+    throw new Error("Inbound WhatsApp auto-reply was not sent through simulation: " + JSON.stringify(webhookBody));
   }
 });
 
