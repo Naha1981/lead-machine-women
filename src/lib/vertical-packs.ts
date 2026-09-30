@@ -137,28 +137,28 @@ export function fallbackLeadQualification(opts: {
 }): {
   score: number;
   temperature: "hot" | "warm" | "cold";
-  reason: string;
+    reason: fit + " " + urgency,
   suggestedAction: string;
 } {
   const pack = getVerticalPack(opts.industry);
-  const text = \`\${opts.serviceNeeded ?? ""} \${opts.message ?? ""}\`;
+  const text = (opts.serviceNeeded ?? "") + " " + (opts.message ?? "");
   let score = 4;
 
   if (pack && containsAny(text, pack.fitKeywords)) score += 2;
   if (pack && containsAny(text, pack.urgentKeywords)) score += 2;
   if ((opts.message ?? "").trim().length >= 30) score += 1;
-  if ((opts.phone ?? "").replace(/\\D/g, "").length >= 9) score += 1;
+  if ((opts.phone ?? "").replace(/\D/g, "").length >= 9) score += 1;
 
   score = Math.max(1, Math.min(10, score));
   const temperature = score >= 8 ? "hot" : score >= 5 ? "warm" : "cold";
   const suggestedAction = temperature === "hot" ? "Contact this lead now" : temperature === "warm" ? "Follow up promptly" : "Review before prioritising";
   const urgency = pack && containsAny(text, pack.urgentKeywords) ? "Urgent signals were detected." : "No strong urgency signal was detected.";
-  const fit = pack && containsAny(text, pack.fitKeywords) ? \`The enquiry matches \${pack.label.toLowerCase()} services.\` : "Service fit is still unclear.";
+  const fit = pack && containsAny(text, pack.fitKeywords) ? "The enquiry matches " + pack.label.toLowerCase() + " services." : "Service fit is still unclear.";
 
   return {
     score,
     temperature,
-    reason: \`\${fit} \${urgency}\`,
+    reason: fit + " " + urgency,
     suggestedAction,
   };
 }
