@@ -5,7 +5,6 @@
 import { generateText } from "ai";
 import { getModel, AINotConfiguredError } from "@/lib/ai/provider";
 import { createMessage } from "@/modules/whatsapp/service";
-import { emitEvent } from "@/modules/events/service";
 import { operatorConfigured, sendText } from "@/lib/integrations/whatsapp-operator/client";
 import type { DbLead, DbOrganization } from "@/lib/db/schema";
 
@@ -87,11 +86,6 @@ export async function sendInboundAutoReply(opts: {
     } catch (error) {
       console.error("[whatsapp auto-reply] simulation log failed", error);
     }
-    await emitEvent({
-      orgId: opts.org.id,
-      eventType: "whatsapp.auto_reply_sent",
-      payload: { leadId: opts.lead.id, simulated: true },
-    });
     return { sent: true, simulated: true, content };
   }
 
@@ -126,12 +120,6 @@ export async function sendInboundAutoReply(opts: {
     } catch (error) {
       console.error("[whatsapp auto-reply] message log failed", error);
     }
-
-    await emitEvent({
-      orgId: opts.org.id,
-      eventType: sent ? "whatsapp.auto_reply_sent" : "whatsapp.auto_reply_failed",
-      payload: { leadId: opts.lead.id, simulated: false, error: result.error },
-    });
 
     return {
       sent,
