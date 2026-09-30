@@ -44,6 +44,7 @@ import {
   TEMPLATES,
 } from "@/lib/constants";
 import type { Org, Website } from "@/types";
+import { getVerticalPack } from "@/lib/vertical-packs";
 
 const COLOR_PALETTE = [
   { name: "Emerald", value: "#059669" },
@@ -117,6 +118,9 @@ export default function OnboardingView() {
     if (ind) setTemplate(ind.template);
     const preset = INDUSTRY_PRESETS[industry];
     if (preset) setPrimaryColor(preset.color);
+
+    const pack = getVerticalPack(industry);
+    if (pack) setServices(pack.services.join("\n"));
   }, [industry]);
 
   // Create org when entering step 3 (only once per visit) — must happen BEFORE
@@ -638,9 +642,41 @@ export default function OnboardingView() {
                       className="min-h-24"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Comma-separated or one per line. The AI uses these to write your website.
+                      Your selected vertical pack pre-fills these services. You can edit them before continuing.
                     </p>
                   </div>
+
+                  {(() => {
+                    const pack = getVerticalPack(industry);
+                    if (!pack) return null;
+                    return (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-white border border-emerald-100 text-xl">
+                            {pack.emoji}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-emerald-900">
+                              {pack.label} Intelligence Pack is ready
+                            </p>
+                            <p className="mt-1 text-xs text-emerald-800">
+                              Lead Machine will use {pack.qualificationQuestions.length} pre-built qualification questions and industry-specific urgency cues when scoring enquiries.
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {pack.qualificationQuestions.map((q) => (
+                                <span
+                                  key={q.id}
+                                  className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-emerald-800 border border-emerald-100"
+                                >
+                                  {q.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="space-y-2">
                     <Label htmlFor="whatsapp">
