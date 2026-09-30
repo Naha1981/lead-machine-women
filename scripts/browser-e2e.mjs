@@ -138,11 +138,57 @@ await run("demo dentist full lead success journey", async () => {
   await desktop.locator('input[name="phone"]').fill("+27825550199");
   await desktop.locator('input[name="email"]').fill("browser-test@example.com");
   await desktop.locator('select[name="serviceNeeded"]').selectOption({ label: "Dental implants" });
-  await desktop.locator('textarea[name="message"]').fill("I want an implant consultation.");
+  await desktop.locator('textarea[name="message"]').fill("I want an urgent implant consultation this week.");
+  const scoringResponse = desktop.waitForResponse(
+    (response) => response.url().includes("/api/demo/dentist/lead") && response.request().method() === "POST"
+  );
   await desktop.getByRole("button", { name: "Request consultation" }).click();
+  const scoringPayload = await (await scoringResponse).json();
+  if (typeof scoringPayload.score !== "number") throw new Error("Lead was created without a score");
+  if (!["hot", "warm", "cold"].includes(scoringPayload.temperature)) {
+    throw new Error("Lead was created without a valid temperature");
+  }
   await assertText(desktop, "Demo lead captured. Lead ID:", "demo success");
   await assertNoOverflow(desktop, "demo dentist");
   await screenshot(desktop, "05-demo-success");
+});
+
+await run("published business page and quote form submission", async () => {
+  const api = await desktop.request.get(base + "/api/website/public?slug=sandton-smile-dental");
+  if (!api.ok()) throw new Error("Published business page API failed: HTTP " + api.status());
+  const view = await api.json();
+  if (!view?.website?.published && view?.website?.published !== undefined) {
+    throw new Error("Demo website is not published");
+  }
+  if (view?.org?.name !== "Sandton Smile Dental") {
+    throw new Error("Published business page returned the wrong business");
+  }
+
+  const res = await go(desktop, "/s/sandton-smile-dental");
+  if (!res || res.status() !== 200) throw new Error("Public business page HTTP " + (res?.status()));
+  await assertText(desktop, "Sandton Smile Dental", "published business page");
+
+  await desktop.locator('input[name="name"]').fill("Quote Form Patient");
+  await desktop.locator('input[name="phone"]').fill("+27825550301");
+  await desktop.locator('input[name="email"]').fill("quote-test@example.com");
+  await desktop.locator('input[id="lf-service"]').fill("Emergency dental care");
+  await desktop.locator('textarea[id="lf-message"]').fill("I need an urgent appointment and would like a quote for treatment.");
+  await desktop.locator('button[id="lf-consent"]').check();
+
+  const quoteResponse = desktop.waitForResponse(
+    (response) => response.url().includes("/api/leads") && response.request().method() === "POST"
+  );
+  await desktop.getByRole("button", { name: /Request consultation/i }).click();
+  const quotePayload = await (await quoteResponse).json();
+  if (!quotePayload.ok || !quotePayload.leadId) {
+    throw new Error("Quote form did not create a lead: " + JSON.stringify(quotePayload));
+  }
+  if (typeof quotePayload.score !== "number") {
+    throw new Error("Quote form lead was not scored");
+  }
+  await assertText(desktop, "Your enquiry is in", "quote form success");
+  await assertNoOverflow(desktop, "published business page + quote form");
+  await screenshot(desktop, "06-published-site-quote-form");
 });
 
 await run("demo dentist mobile journey and responsiveness", async () => {
