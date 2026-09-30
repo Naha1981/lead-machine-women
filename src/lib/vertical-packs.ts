@@ -137,7 +137,7 @@ export function fallbackLeadQualification(opts: {
 }): {
   score: number;
   temperature: "hot" | "warm" | "cold";
-    reason: fit + " " + urgency,
+  reason: string;
   suggestedAction: string;
 } {
   const pack = getVerticalPack(opts.industry);
