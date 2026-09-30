@@ -26,6 +26,11 @@ jobs:
       ENABLE_DEMO_MODE: "true"
       SIMULATE_WHATSAPP: "true"
       CRON_SECRET: smoke-secret
+      DEMO_SECRET: smoke-demo
+      OPERATOR_URL: http://operator.invalid
+      OPERATOR_API_KEY: smoke-operator-key
+      WEBHOOK_SECRET: smoke-webhook
+      WHATSAPP_AUTO_REPLY_ENABLED: "true"
       ARTIFACT_DIR: artifacts/browser-e2e
     steps:
       - uses: actions/checkout@v4
