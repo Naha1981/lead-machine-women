@@ -27,6 +27,7 @@ export function PublicSiteRenderer({
 
   return (
     <div
+      data-public-site
       className="min-h-screen bg-[#0a0a0a]"
       style={{ ["--brand" as any]: brand }}
     >
