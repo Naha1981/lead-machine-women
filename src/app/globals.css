@@ -180,3 +180,9 @@
 :root:not(.dark) [data-public-site] [class*="border-white/"] {
   border-color: var(--border) !important;
 }
+
+
+@layer utilities {
+  .dark [class*="bg-white/"] { background-color: var(--card) !important; }
+  .dark [class*="border-white/"] { border-color: var(--border) !important; }
+}
