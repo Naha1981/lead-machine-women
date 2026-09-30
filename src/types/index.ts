@@ -41,6 +41,7 @@ export type Lead = {
   ownerNotified: boolean;
   consentGiven: boolean;
   optedOutAt: string | null;
+  hotLeadAlertedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
