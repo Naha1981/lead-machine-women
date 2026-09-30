@@ -222,6 +222,16 @@ await run("published business page and quote form submission", async () => {
   // stable end-to-end assertion rather than a transport-level race.
   await assertText(desktop, "Your enquiry is in", "quote form success");
   await assertNoOverflow(desktop, "published business page + quote form");
+
+  const publicSite = desktop.locator("[data-public-site]");
+  const lightBackground = await publicSite.evaluate((el) => getComputedStyle(el).backgroundColor);
+  await desktop.getByRole("button", { name: "Switch to dark theme" }).click();
+  await desktop.waitForTimeout(150);
+  const darkBackground = await publicSite.evaluate((el) => getComputedStyle(el).backgroundColor);
+  if (lightBackground === darkBackground) {
+    throw new Error("Published business page did not respond to the global theme toggle");
+  }
+  await desktop.getByRole("button", { name: "Switch to light theme" }).click();
   await screenshot(desktop, "06-published-site-quote-form");
 });
 
