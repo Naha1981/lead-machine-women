@@ -8,6 +8,10 @@ export const INDUSTRIES = [
   { value: "wellness", label: "Wellness / Fitness", template: "wellness" },
   { value: "accounting", label: "Accounting / Tax", template: "professional" },
   { value: "construction", label: "Construction / QS", template: "construction" },
+  { value: "plumber", label: "Plumber", template: "construction" },
+  { value: "electrician", label: "Electrician", template: "construction" },
+  { value: "mobile-mechanic", label: "Mobile Mechanic", template: "construction" },
+  { value: "cleaner", label: "Cleaner", template: "professional" },
   { value: "insurance", label: "Insurance Broker", template: "professional" },
   { value: "other", label: "Other", template: "professional" },
 ] as const;
@@ -112,6 +116,10 @@ export const INDUSTRY_PRESETS: Record<string, { color: string; emoji: string }> 
   wellness: { color: "#9333ea", emoji: "🌿" },
   accounting: { color: "#0d9488", emoji: "📊" },
   construction: { color: "#ea580c", emoji: "🏗️" },
+  plumber: { color: "#0891b2", emoji: "🔧" },
+  electrician: { color: "#ca8a04", emoji: "⚡" },
+  "mobile-mechanic": { color: "#475569", emoji: "🚗" },
+  cleaner: { color: "#0d9488", emoji: "🧹" },
   insurance: { color: "#0369a1", emoji: "🛡️" },
   other: { color: "#059669", emoji: "✨" },
 };
