@@ -96,6 +96,43 @@ await run("landing mobile navigation and responsiveness", async () => {
   await mobile.waitForTimeout(200);
 });
 
+await run("global light and dark theme toggle persists", async () => {
+  await go(desktop, "/");
+  const toggle = desktop.getByRole("button", { name: "Switch to dark theme" });
+  await toggle.waitFor({ state: "visible", timeout: 10000 });
+  if (await desktop.locator("html").getAttribute("class").then((value) => value?.includes("dark"))) {
+    throw new Error("Landing page unexpectedly started in dark mode");
+  }
+
+  await toggle.click();
+  await desktop.waitForTimeout(150);
+  let htmlClass = await desktop.locator("html").getAttribute("class");
+  if (!htmlClass?.includes("dark")) throw new Error("Dark theme was not applied");
+
+  await desktop.reload({ waitUntil: "domcontentloaded" });
+  await desktop.waitForTimeout(300);
+  htmlClass = await desktop.locator("html").getAttribute("class");
+  if (!htmlClass?.includes("dark")) throw new Error("Dark theme did not persist after reload");
+
+  const lightToggle = desktop.getByRole("button", { name: "Switch to light theme" });
+  await lightToggle.click();
+  await desktop.waitForTimeout(150);
+  htmlClass = await desktop.locator("html").getAttribute("class");
+  if (htmlClass?.includes("dark")) throw new Error("Light theme was not restored");
+
+  await assertNoOverflow(desktop, "theme toggle desktop");
+  await go(mobile, "/");
+  const mobileToggle = mobile.getByRole("button", { name: "Switch to dark theme" });
+  await mobileToggle.waitFor({ state: "visible", timeout: 10000 });
+  await mobileToggle.click();
+  await mobile.waitForTimeout(150);
+  const mobileClass = await mobile.locator("html").getAttribute("class");
+  if (!mobileClass?.includes("dark")) throw new Error("Mobile dark theme did not apply");
+  await mobile.getByRole("button", { name: "Switch to light theme" }).click();
+  await assertNoOverflow(mobile, "theme toggle mobile");
+  await screenshot(desktop, "02-theme-toggle-dark");
+});
+
 await run("login route is built", async () => {
   const res = await go(desktop, "/login");
   if (!res || res.status() !== 200) throw new Error("unexpected HTTP " + (res?.status()));
@@ -263,6 +300,25 @@ await run("widget endpoint returns embeddable script", async () => {
   const body = await res.text();
   if (!body.includes("Make an enquiry") || !body.includes("/go/sandton-smile-dental")) {
     throw new Error("Widget script contract missing");
+  }
+});
+
+await run("WhatsApp public transport contracts are protected", async () => {
+  const webhook = await desktop.request.get(base + "/api/webhooks/whatsapp");
+  if (!webhook.ok()) throw new Error("WhatsApp webhook health GET failed: HTTP " + webhook.status());
+  const webhookBody = await webhook.json();
+  if (webhookBody?.ok !== true || webhookBody?.endpoint !== "whatsapp-webhook") {
+    throw new Error("WhatsApp webhook health contract mismatch");
+  }
+
+  const qr = await desktop.request.get(base + "/api/whatsapp/qr");
+  if (qr.status() !== 401) {
+    throw new Error("WhatsApp QR endpoint must require authentication; got HTTP " + qr.status());
+  }
+
+  const status = await desktop.request.get(base + "/api/whatsapp/status");
+  if (status.status() !== 401) {
+    throw new Error("WhatsApp status endpoint must require authentication; got HTTP " + status.status());
   }
 });
 
